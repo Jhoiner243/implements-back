@@ -6,20 +6,24 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ServerSetup = void 0;
+exports.RoutesSetup = void 0;
 var inversify_1 = require("inversify");
-var ServerSetup = /** @class */ (function () {
-    function ServerSetup() {
+var routing_controllers_1 = require("routing-controllers");
+var app_container_1 = require("../../containers/app.container");
+var RoutesSetup = /** @class */ (function () {
+    function RoutesSetup() {
     }
-    ServerSetup.prototype.create = function (app, port) {
-        var server = app.listen(port, function () {
-            console.log("Server is running on port ".concat(port));
+    RoutesSetup.prototype.setup = function (app) {
+        (0, routing_controllers_1.useContainer)(app_container_1.appContainer);
+        (0, routing_controllers_1.useExpressServer)(app, {
+            controllers: [
+            //AuthController
+            ]
         });
-        return server;
     };
-    ServerSetup = __decorate([
+    RoutesSetup = __decorate([
         (0, inversify_1.injectable)()
-    ], ServerSetup);
-    return ServerSetup;
+    ], RoutesSetup);
+    return RoutesSetup;
 }());
-exports.ServerSetup = ServerSetup;
+exports.RoutesSetup = RoutesSetup;
