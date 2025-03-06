@@ -1,0 +1,1 @@
+{"root":["../server.ts","../src/app/app.ts","../src/config/configs.ts","../src/containers/app.container.ts","../src/containers/bindings/app.binding.ts","../src/containers/bindings/server.binding.ts","../src/frameworks/setups/server.setup.ts","../src/ts/types/port.ts"],"version":"5.8.2"}
