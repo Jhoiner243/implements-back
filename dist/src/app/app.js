@@ -55,9 +55,13 @@ exports.App = void 0;
 var express_1 = __importDefault(require("express"));
 var inversify_1 = require("inversify");
 var configs_1 = require("../config/configs");
+var middlewares_setup_1 = require("../frameworks/setups/middlewares.setup");
+var routes_setup_1 = require("../frameworks/setups/routes.setup");
 var server_setup_1 = require("../frameworks/setups/server.setup");
 var App = /** @class */ (function () {
-    function App(serverSetup) {
+    function App(middlewaresSetup, routesSetup, serverSetup) {
+        this.middlewaresSetup = middlewaresSetup;
+        this.routesSetup = routesSetup;
         this.serverSetup = serverSetup;
         this.app = (0, express_1.default)();
         this.port = configs_1.PORT;
@@ -65,6 +69,8 @@ var App = /** @class */ (function () {
     App.prototype.start = function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
+                this.middlewaresSetup.init(this.app);
+                this.routesSetup.setup(this.app);
                 this.serverSetup.create(this.app, this.port);
                 return [2 /*return*/];
             });
@@ -72,8 +78,12 @@ var App = /** @class */ (function () {
     };
     App = __decorate([
         (0, inversify_1.injectable)(),
-        __param(0, (0, inversify_1.inject)(server_setup_1.ServerSetup)),
-        __metadata("design:paramtypes", [server_setup_1.ServerSetup])
+        __param(0, (0, inversify_1.inject)(middlewares_setup_1.MiddlewaresSetup)),
+        __param(1, (0, inversify_1.inject)(routes_setup_1.RoutesSetup)),
+        __param(2, (0, inversify_1.inject)(server_setup_1.ServerSetup)),
+        __metadata("design:paramtypes", [middlewares_setup_1.MiddlewaresSetup,
+            routes_setup_1.RoutesSetup,
+            server_setup_1.ServerSetup])
     ], App);
     return App;
 }());

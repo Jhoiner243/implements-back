@@ -15,11 +15,6 @@ var RoutesSetup = /** @class */ (function () {
     }
     RoutesSetup.prototype.setup = function (app) {
         (0, routing_controllers_1.useContainer)(app_container_1.appContainer);
-        (0, routing_controllers_1.useExpressServer)(app, {
-            controllers: [
-            //AuthController
-            ]
-        });
     };
     RoutesSetup = __decorate([
         (0, inversify_1.injectable)()

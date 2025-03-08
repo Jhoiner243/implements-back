@@ -5,6 +5,6 @@ import { setupBinding } from "./bindings/setup.binding";
 export const appContainer = new Container()
 
 appContainer.load(
-  appBinding,
-  setupBinding
+  setupBinding,
+  appBinding
 )
