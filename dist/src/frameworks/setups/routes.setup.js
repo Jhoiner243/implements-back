@@ -10,11 +10,17 @@ exports.RoutesSetup = void 0;
 var inversify_1 = require("inversify");
 var routing_controllers_1 = require("routing-controllers");
 var app_container_1 = require("../../containers/app.container");
+var facturas_controller_1 = require("../../controllers/facturas.controller");
 var RoutesSetup = /** @class */ (function () {
     function RoutesSetup() {
     }
     RoutesSetup.prototype.setup = function (app) {
         (0, routing_controllers_1.useContainer)(app_container_1.appContainer);
+        (0, routing_controllers_1.useExpressServer)(app, {
+            controllers: [
+                facturas_controller_1.FacturaController
+            ]
+        });
     };
     RoutesSetup = __decorate([
         (0, inversify_1.injectable)()

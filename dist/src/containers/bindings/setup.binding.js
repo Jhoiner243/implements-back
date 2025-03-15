@@ -10,7 +10,7 @@ exports.TYPES = {
     App: Symbol.for("App")
 };
 exports.setupBinding = new inversify_1.ContainerModule(function (bind) {
-    bind.bind(middlewares_setup_1.MiddlewaresSetup).toSelf();
-    bind.bind(routes_setup_1.RoutesSetup).toSelf();
-    bind.bind(server_setup_1.ServerSetup).toSelf();
+    bind(middlewares_setup_1.MiddlewaresSetup).toSelf();
+    bind(routes_setup_1.RoutesSetup).toSelf();
+    bind(server_setup_1.ServerSetup).toSelf();
 });

@@ -34,9 +34,9 @@ model User {
 
 model Factura {
   id String @id @default(uuid())
-  userId String
+  userId String @map("id_usuario")
   user User @relation(fields: [userId], references: [id])
-  clienteId String
+  clienteId String @map("id_cliente")
   cliente Clientes @relation(fields: [clienteId], references: [id])
   detalles Detalle_factura[]
   total Float
@@ -139,6 +139,24 @@ model ProfitSummary {
   ganancia_total Float
   tipo_periodo String
   createdAt DateTime @default(now())
+}
+
+model EmailLog {
+  id String @id @default(uuid())
+  facturaId String
+  status StatusEmail
+}
+
+enum TipoPeriodo {
+  Mensual
+  Semanal
+  Anual
+}
+
+
+enum StatusEmail {
+  Success
+  Failed
 }
 
 enum Role {

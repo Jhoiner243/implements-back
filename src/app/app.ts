@@ -6,6 +6,7 @@ import { RoutesSetup } from "../frameworks/setups/routes.setup";
 import { ServerSetup } from "../frameworks/setups/server.setup";
 import { Port } from "../ts/types/port";
 
+
 @injectable()
 export class App {
   private app: Express;
@@ -20,9 +21,9 @@ export class App {
     this.port =  PORT
   }
 
-  async start(){
-    this.middlewaresSetup.init(this.app)
+    start(): void {
     this.routesSetup.setup(this.app)
+    this.middlewaresSetup.init(this.app)
    this.serverSetup.create(this.app, this.port)
   }
 }
