@@ -2,6 +2,7 @@ import { Container } from "inversify";
 import { appBinding } from "./bindings/app.binding";
 import { clientesBinding } from "./bindings/clientes.binding";
 import { facturasBindig } from "./bindings/facturas.binding";
+import { gananciasBinding } from "./bindings/ganancias .binding";
 import { productosBinding } from "./bindings/productos.binding";
 import { setupBinding } from "./bindings/setup.binding";
 
@@ -12,5 +13,6 @@ appContainer.load(
   facturasBindig,
   clientesBinding,
   productosBinding,
+  gananciasBinding,
   appBinding,
 )

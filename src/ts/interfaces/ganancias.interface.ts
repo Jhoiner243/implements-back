@@ -1,6 +1,6 @@
 import { GananciasEntity } from "../../entities/ganacias.entity";
 
 export interface IGanancias {
-  createProfit: (data: GananciasEntity) => Promise<void>
+  createProfit: (startDate: Date, endDate: Date, totalProfit: number) => Promise<void>
   getProfit: () => Promise<GananciasEntity[]>
 }
