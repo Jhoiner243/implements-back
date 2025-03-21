@@ -1,0 +1,9 @@
+*
+
+!/.env.prod
+!/package.json
+!/pnpm-lock.yaml
+!/tsconfig.json
+!/tsconfig.build.json
+!/src
+!/prisma
