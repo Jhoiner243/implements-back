@@ -1,14 +1,14 @@
 import { Response } from "express";
 import { inject } from "inversify";
 import { Get, JsonController, Res } from "routing-controllers";
-import { GanaciasService } from "../services/ganancias.service";
+import { GananciasServices } from "../services/profit.service";
 import { AppError } from "../utils/errors/app-errors";
 
 @JsonController()
 export class GananciasController {
-  constructor(@inject(GanaciasService)private gananciasService: GanaciasService) {}
+  constructor(@inject(GananciasServices)private gananciasService: GananciasServices) {}
 
-  @Get('/ganancias/profit')
+  @Get('/profit')
   async getProfit(@Res() res: Response) {
     try {
       const profit = await this.gananciasService.getProfit();

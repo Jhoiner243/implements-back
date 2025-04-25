@@ -6,18 +6,19 @@ import { IGanancias } from "../ts/interfaces/ganancias.interface";
 @injectable()
 export class GananciasRepository implements IGanancias {
 
-  async createProfit(startDate: Date, endDate: Date, totalProfit: number): Promise<void> {
+  async createProfit(startDate: Date, endDate: Date, totalProfit: number, tipo_periodo: string): Promise<void> {
     await db.profitSummary.create({
       data: {
         fecha_inicio: startDate,
         fecha_fin: endDate,
         ganancia_total: totalProfit,
-        tipo_periodo: "Mensual"
+        tipo_periodo: tipo_periodo
       }
     });
   }
 
   async getProfit(): Promise<GananciasEntity[]> {
     return db.profitSummary.findMany();
+    
   }
 }

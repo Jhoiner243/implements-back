@@ -4,6 +4,7 @@ import { PORT } from "../config/configs";
 import { MiddlewaresSetup } from "../frameworks/setups/middlewares.setup";
 import { RoutesSetup } from "../frameworks/setups/routes.setup";
 import { ServerSetup } from "../frameworks/setups/server.setup";
+import { TerminusSetup } from "../frameworks/setups/terminus.setup";
 import { Port } from "../ts/types/port";
 
 
@@ -16,14 +17,17 @@ export class App {
     @inject(MiddlewaresSetup) private middlewaresSetup: MiddlewaresSetup,
     @inject(RoutesSetup) private routesSetup: RoutesSetup,
     @inject(ServerSetup) private serverSetup: ServerSetup,
+    @inject(TerminusSetup) private terminusSetup: TerminusSetup
   ){
     this.app = express()
     this.port =  PORT
   }
 
     start(): void {
-    this.routesSetup.setup(this.app)
     this.middlewaresSetup.init(this.app)
-   this.serverSetup.create(this.app, this.port)
+    this.routesSetup.setup(this.app)
+  const server = this.serverSetup.create(this.app, this.port)
+
+   this.terminusSetup.setup(server)
   }
 }

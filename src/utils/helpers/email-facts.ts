@@ -13,6 +13,7 @@ export async function emailFacts (facturaId: string) {
     where: {id: factura?.detalles[0].productoId},})
   try {
       //Enviamos al email del cliente
+      console.log(factura.cliente.email)
       await transporter.sendMail({
         to: factura?.cliente.email,
         subject: `Factura #${factura?.id}`,

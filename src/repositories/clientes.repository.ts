@@ -32,8 +32,11 @@ export class ClientesRepository implements  IClientes{
   }
 
   async getAllClient (): Promise<ClienteEntity[]> {
-    const clientes = await db.clientes.findMany()
-
+    const clientes = await db.clientes.findMany({
+      cacheStrategy: {
+        ttl: 60
+      }
+    })
     return clientes
   }
 

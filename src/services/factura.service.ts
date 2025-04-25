@@ -1,5 +1,5 @@
 import { inject, injectable } from "inversify";
-import { FacturasEntity } from "../entities/facturas.entity";
+import { FacturaSeccion, FacturasEntity } from "../entities/facturas.entity";
 import { FacturaRepository } from "../repositories/factura.repository";
 import { FacturasEntitySchema } from "../ts/validations/factura.validations";
 import { AppError } from "../utils/errors/app-errors";
@@ -13,8 +13,18 @@ export class FacturaService {
       //Validamos los datos con zod
       const facturaValid = FacturasEntitySchema.parse(data)
 
-      //Enviamos datos validados
-      await this.facturaRepository.dataFact(facturaValid)
+      // Agregamos la propiedad createdAt
+      const facturaWithCreatedAt = {
+        ...facturaValid,
+        createdAt: new Date(),
+        detalles: facturaValid.detalles.map(detalle => ({
+          ...detalle,
+          createdAt: new Date()
+        }))
+      };
+
+      // Enviamos datos validados
+      await this.facturaRepository.dataFact(facturaWithCreatedAt)
 
       return {message: "Factura creada exitosamente"}
     } catch (err) {
@@ -26,7 +36,7 @@ export class FacturaService {
       }
     }
 
-  async getFact(): Promise<FacturasEntity[]> {
+  async getFact(): Promise<FacturaSeccion[]> {
     try{
       const facturas = await this.facturaRepository.getFact()
 
@@ -35,6 +45,33 @@ export class FacturaService {
       if(err){
         throw AppError.error("Error al enviar facturas", 500)
       }else {
+        throw err
+      }
+    }
+  }
+
+  async deleteFact(id: string): Promise<{message: string}> {
+    try {
+      await this.facturaRepository.deleteFact(id)
+      return {message: "Factura eliminada exitosamente"}
+    } catch (err) {
+      if (err instanceof AppError) {
+        return AppError.error("Error al eliminar la factura", 500)
+      } else {
+        throw err
+      }
+    }
+  }
+
+  async updateFact(id: string, data: FacturasEntity): Promise<{message: string}> {
+    try {
+
+      await this.facturaRepository.updateFact(id, data)
+      return {message: "Factura actualizada exitosamente"}
+    } catch (err) {
+      if (err instanceof AppError) {
+        return AppError.error("Error de datos en appError", 500)
+      } else {
         throw err
       }
     }

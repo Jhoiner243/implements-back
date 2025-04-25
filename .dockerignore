@@ -3,6 +3,7 @@
 !/.env.prod
 !/package.json
 !/pnpm-lock.yaml
+!/maxpollo.json
 !/tsconfig.json
 !/tsconfig.build.json
 !/src

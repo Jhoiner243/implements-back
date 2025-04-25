@@ -5,6 +5,9 @@ export interface ProductoEntity {
   stock: number;
   categoryId: string;
 }
+export interface ProductoSeccion extends ProductoEntity {
+  categoryName: string
+}
 
 export interface CategoryEntity{
   id: string;

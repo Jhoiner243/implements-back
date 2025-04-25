@@ -4,14 +4,16 @@ import { Body, Delete, Get, JsonController, Param, Post, Res } from "routing-con
 import { CategoryEntity, type ProductoEntity } from "../entities/producto.entity";
 import { ProductoService } from "../services/producto.service";
 import { AppError } from "../utils/errors/app-errors";
+import { BaseController } from "./base.controller";
 
 @JsonController()
-export class ProductoController {
+export class ProductoController implements BaseController{
   constructor(@inject(ProductoService) private productoService: ProductoService){}
 
   @Post("/productos")
   async addProducto(@Res() res: Response, @Body() data: Omit<ProductoEntity, "id">){
     try {
+      console.log(data)
       const { message } = await this.productoService.addProducto(data);
       return res.status(200).json({ message });
     } catch{
@@ -47,6 +49,17 @@ export class ProductoController {
       console.log(id_producto);
       const { message } = await this.productoService.deleteProducto(id_producto);
       return res.status(200).json({ message });
+    } catch (err) {
+      if(err instanceof AppError)
+      return res.status(500).json({ message: err.message || "Error de servidor interno" });
+    }
+  }
+
+  @Get("/category")
+  async getCategory(@Res() res: Response){
+    try {
+      const category = await this.productoService.getAllCategory();
+      return res.status(200).json(category);
     } catch (err) {
       if(err instanceof AppError)
       return res.status(500).json({ message: err.message || "Error de servidor interno" });

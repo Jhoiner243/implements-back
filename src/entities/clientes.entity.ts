@@ -1,4 +1,4 @@
-export interface ClienteEntity {
+export interface    ClienteEntity {
   id: string,
   name: string,
   email: string,

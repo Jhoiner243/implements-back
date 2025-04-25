@@ -8,6 +8,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -16,13 +17,11 @@ datasource db {
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
+  token     String ?
   username  String   @unique
   name      String
   lastname  String
   password  String
-  roleId    String
-  role      Roles    @relation(fields: [roleId], references: [id])
-  facturas  Factura[]
   favoritos ProductFavorite[]
   prompts   Ai_Queries[]
   notifications Notifications[]
@@ -34,11 +33,10 @@ model User {
 
 model Factura {
   id String @id @default(uuid())
-  userId String @map("id_usuario")
-  user User @relation(fields: [userId], references: [id])
   clienteId String @map("id_cliente")
   cliente Clientes @relation(fields: [clienteId], references: [id])
   detalles Detalle_factura[]
+  status StatusFactura  @default(Pendiente)
   total Float
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -107,6 +105,13 @@ model Notifications {
   updatedAt DateTime @updatedAt
 }
 
+model tokens {
+  id String @id @default(uuid())
+  userId String
+  token String
+  createdAt DateTime @default(now())
+}
+
 model Clientes {
   id String @id @default(uuid())
   pedidos Factura[]
@@ -129,7 +134,6 @@ model StockHistory {
 model Roles {
   id        String   @id @default(uuid())
   name      Role     @default(USER)
-  users     User[]
 }
 
 model ProfitSummary {
@@ -148,6 +152,7 @@ model EmailLog {
 }
 
 enum TipoPeriodo {
+  Diario
   Mensual
   Semanal
   Anual
@@ -162,4 +167,11 @@ enum StatusEmail {
 enum Role {
   ADMIN
   USER
+}
+
+enum StatusFactura {
+  Pagada
+  Pendiente
+  Fiada
+  Vencida
 }

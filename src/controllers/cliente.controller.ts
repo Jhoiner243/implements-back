@@ -1,12 +1,14 @@
 import { Request, Response } from "express";
 import { inject } from "inversify";
 import { Body, Delete, Get, JsonController, Param, Post, Res } from "routing-controllers";
+import { ZodError } from "zod";
 import { ClienteEntity } from "../entities/clientes.entity";
 import { ClienteService } from "../services/clientes.service";
 import { AppError } from "../utils/errors/app-errors";
+import { BaseController } from "./base.controller";
 
 @JsonController()
-export class ClienteController {
+export class ClienteController implements BaseController{
   constructor(
     @inject(ClienteService) private clienteService: ClienteService
   ) {}
@@ -14,9 +16,17 @@ export class ClienteController {
   @Post("/clientes")
   async addClient(@Res() res: Response, @Body() data: Omit<ClienteEntity, "id">){
     try {
+      console.log(data)
       const { message } = await this.clienteService.addClient(data);
       return res.status(200).json({ message });
-    } catch{
+    } catch(err){
+      if(err instanceof ZodError){
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      if(err instanceof AppError){
+        return res.status(400).json({ message: err.message });
+      }
+      console.error("Error en addClient:", err);
     return res.status(500).json({message: "Error de servidor interno"})
     }
   }
@@ -48,11 +58,9 @@ export class ClienteController {
   async getAllClient(@Res() res: Response) {
     try {
       const clientes = await this.clienteService.getAllClient();
-      console.log(clientes);
       return res.status(200).json(clientes);
-    } catch (err) {
-      if(err instanceof AppError)
-      return res.status(500).json({ message: err.message || "Error de servidor interno" });
+    } catch {
+      return res.status(500).json( "Error de servidor interno");
     }
   }
 }

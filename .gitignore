@@ -1,5 +1,8 @@
 node_modules
 .env
 pnpm-loack.yaml
-dist
+/dist
 .qodo
+/maxpollo.json
+/docker-compose.postgres.yml
+.env.prod
