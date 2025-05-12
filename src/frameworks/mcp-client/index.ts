@@ -1,173 +1,347 @@
-// anthropic sdk
-import { Anthropic } from "@anthropic-ai/sdk";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// src/clients/mcp-client.ts
 import {
-  MessageParam,
-  Tool,
-} from "@anthropic-ai/sdk/resources/messages/messages.mjs";
-
-// mcp sdk
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-
+  FunctionCallingConfigMode,
+  GenerateContentConfig,
+  GoogleGenAI,
+  Type,
+  type Content,
+} from "@google/genai";
+import { Client as McpClientSdk } from "@modelcontextprotocol/sdk/client/index.js";
+import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
+import { Tool } from "@modelcontextprotocol/sdk/types";
 import dotenv from "dotenv";
-import { injectable } from "inversify";
-import readline from "readline/promises";
+import { inject, injectable } from "inversify";
+import { URL_API } from "../../config/configs";
+import { McpService } from "../../services/mcp.service";
+import { ChatMessage } from "./type";
 
 dotenv.config();
 
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-if (!ANTHROPIC_API_KEY) {
-  throw new Error("ANTHROPIC_API_KEY is not set");
-}
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+const PATH_TO_SERVER = process.env.PATH_TO_SERVER;
 
+if (!GOOGLE_API_KEY) {
+  throw new Error("GOOGLE_API_KEY no está definida en el .env");
+}
+if (!PATH_TO_SERVER) {
+  throw new Error(
+    "PATH_TO_SERVER (ruta al script del servidor) no está definida en el .env"
+  );
+}
 @injectable()
 export class MCPClient {
-  private mcp: Client;
-  private llm: Anthropic;
-  private transport: StdioClientTransport | null = null;
+  private mcp: McpClientSdk;
+  private llm: GoogleGenAI;
+  private transport!: SSEClientTransport;
   private tools: Tool[] = [];
 
-  constructor() {
-    this.llm = new Anthropic({
-      apiKey: ANTHROPIC_API_KEY,
-    });
-    this.mcp = new Client({ name: "mcp-client-cli", version: "1.0.0" });
+  constructor(@inject(McpService) private mcpService: McpService) {
+    this.llm = new GoogleGenAI({ apiKey: GOOGLE_API_KEY });
+    this.mcp = new McpClientSdk({ name: "mcp-client-cli", version: "1.0.0" });
   }
 
-  // Connect to the MCP
-  async connectToServer(serverScriptPath: string) {
-    const isJs = serverScriptPath.endsWith(".js");
-    const isPy = serverScriptPath.endsWith(".py");
-    if (!isJs && !isPy) {
-      throw new Error("Server script must be a .js or .py file");
-    }
-    const command = isPy
-      ? process.platform === "win32"
-        ? "python"
-        : "python3"
-      : process.execPath;
+  /**
+   * Conecta al servidor MCP (JS o PY) vía stdio y registra las herramientas
+   */
+  async connectToServer() {
+    const URL_SERVER = new URL(URL_API);
+    this.transport = new SSEClientTransport(new URL(URL_SERVER));
 
-    this.transport = new StdioClientTransport({
-      command, // python /path/to/server.py
-      args: [serverScriptPath],
-    });
     await this.mcp.connect(this.transport);
 
-    // Register tools
-    const toolsResult = await this.mcp.listTools();
-    this.tools = toolsResult.tools.map((tool) => {
-      return {
-        name: tool.name,
-        description: tool.description,
-        input_schema: tool.inputSchema,
-      };
-    });
-
-    console.log(
-      "Connected to server with tools:",
-      this.tools.map(({ name }) => name)
-    );
+    // Traer la lista de herramientas del servidor
+    const { tools } = await this.mcp.listTools();
+    this.tools = tools.map((t) => ({
+      name: t.name,
+      description: t.description,
+      inputSchema: t.input_schema as {
+        [x: string]: unknown;
+        type: "object";
+        properties?: { [x: string]: unknown } | undefined;
+      },
+    }));
+    return this.tools.map((t) => t.name).join(", ");
   }
 
-  // Process query
-  async processQuery(query: string) {
-    // call th llm
-    const messages: MessageParam[] = [
+  /**
+   * Procesa una consulta:
+   * 1. Envía el prompt al LLM junto con metadata de tools
+   * 2. Si el LLM responde un tool_use, invoca mcp.callTool(...)
+   * 3. Alimenta la respuesta de la herramienta de vuelta al LLM
+   */
+  async processQuery(query: string): Promise<ChatMessage> {
+    const finalText: string[] = [];
+    //Definiendo la funcion call con declaraciones
+    const setValuesFunctionCall = {
+      name: "call_tool",
+      description:
+        "Esta funcion devuelve la lista de recursos (tablas) si el usuario desea saber algo sobre los datos que se utilizan en la empresa, por ejemplo: Dime cuales son los clientes que mas compran? deberias acceder a las tablas para saber cual es la tabla de los clientes y determinar cuales son los clientes que mas compran",
+    };
+    const setValuesRepeat = {
+      name: "call_tool_repeat",
+      description:
+        "Esta funcion devuelve la lista de recursos (tablas) si el usuario pide datos en los que no se sepan las tablas necesarias para acceder a esos datos y dar la respuesta",
+    };
+    const ReadResourceSchemaFunctionDeclaration = {
+      name: "read_resource_schema",
+      description:
+        "Devuelve el esquema de la tabla indicada, por ejemplo si solo necesitas acceder a la tabla de clientes esta funcion devuelve la tabla clientes",
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          uri: {
+            type: Type.STRING,
+            description:
+              "debes pasar el nombre de la tabla que de clientes, segun los datos de las tablas que obtuviste anteriormente",
+          },
+        },
+        required: ["uri"],
+      },
+    };
+    const setLightValuesFunctionDeclaration = {
+      name: "call_tool_request_schema",
+      description:
+        "Debes tener en cuenta que las consultas son a una base de datos postgres",
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          request: {
+            type: Type.STRING,
+            description: `Puedes ejecutar una consulta sql de solo lectura para leer los datos necesario para tu respuesta, ten en cuenta esto: Realizo la consulta utilizando comillas dobles alrededor del nombre de la tabla "Clientes" debido a que PostgreSQL (que parece ser el sistema de gestión de base de datos utilizado) es sensible a mayúsculas y minúsculas en los nombres de objetos
+            Cuando ejecuté consultas anteriores sin comillas dobles para las tablas que comienzan con mayúsculas, obtuve errores como "relation 'productos' does not exist" o "relation 'category' does not exist". Esto ocurre porque PostgreSQL convierte automáticamente los identificadores sin comillas a minúsculas durante el procesamiento de consultas.
+            Al colocar el nombre de la tabla entre comillas dobles ("Clientes"), le indico a PostgreSQL que respete exactamente la capitalización del nombre tal como está definido en la base de datos. Esta es una práctica estándar cuando se trabaja con bases de datos PostgreSQL donde los nombres de tablas contienen mayúsculas.
+            En resumen, uso esta sintaxis para asegurarme de que la consulta apunte exactamente a la tabla correcta respetando su nombre original en la base de datos.`,
+          },
+        },
+        required: ["request"],
+      },
+    };
+
+    const functionDeclarations = [
+      setLightValuesFunctionDeclaration,
+      setValuesFunctionCall,
+      ReadResourceSchemaFunctionDeclaration,
+      setValuesRepeat,
+    ];
+
+    //Generando configuraciones con declaracion de funciones
+    const config: GenerateContentConfig = {
+      tools: [
+        {
+          functionDeclarations: functionDeclarations,
+        },
+      ],
+      // Force the model to call 'any' function, instead of chatting.
+      toolConfig: {
+        functionCallingConfig: {
+          mode: FunctionCallingConfigMode.AUTO,
+        },
+      },
+    };
+
+    //Definimos el user prompts
+    const conversationHistory: Content[] = [
       {
         role: "user",
-        content: query,
+        parts: [
+          {
+            text: query,
+          },
+        ],
       },
     ];
 
-    const response = await this.llm.messages.create({
-      model: "claude-3-5-sonnet-20241022",
-      max_tokens: 1000,
-      messages,
-      tools: this.tools,
+    const toolCallNames: string[] | undefined = [];
+
+    const response = await this.llm.models.generateContent({
+      model: "gemini-2.5-flash-preview-04-17",
+      contents: query,
+      config: config,
     });
+    const processFunctionCall = async (name: string, args: any) => {
+      switch (name) {
+        case "call_tool": {
+          const resources = await this.mcpService.listResources();
+          return JSON.stringify(resources.resources);
+        }
+        case "call_tool_repeat": {
+          const resources = await this.mcpService.listResources();
+          return JSON.stringify(resources.resources);
+        }
+        case "call_tool_request_schema": {
+          const data = await this.mcpService.CallToolRequestSchema({
+            sql: args.request,
+          });
+          return JSON.stringify(data);
+        }
+        case "read_resource_schema": {
+          const schema = await this.mcpService.readResourceSchema({
+            uri: args.uri,
+          });
+          return JSON.stringify(schema.contents[0].text);
+        }
 
-    // check the response
-    const finalText: string[] = [];
-    let toolResults 
+        default:
+          return `Función ${name} no implementada`;
+      }
+    };
+    const candidate = response.candidates?.[0];
 
-    // if text -> return response
-    for (const content of response.content) {
-      if (content.type === "text") {
-        finalText.push(content.text);
-      } else if (content.type === "tool_use") {
-        // if tool -> call the tool on mcp server
-        const toolName = content.name;
-        const toolArgs = content.input as { [x: string]: unknown } | undefined;
+    if (response.text) {
+      finalText.push(response.text);
+    }
+    // Helper interno para llamar a la LLM con tool calling siempre
+    const callLLM = async (history: Content[]) => {
+      return this.llm.models.generateContent({
+        model: "gemini-2.5-flash-preview-04-17",
+        contents: history,
+        config,
+      });
+    };
 
-        const result = await this.mcp.callTool({
-          name: toolName,
-          arguments: toolArgs,
-        });
-        toolResults.push(result);
-        finalText.push(
-          `[Calling tool ${toolName} with args ${JSON.stringify(toolArgs)}]`
-        );
-        messages.push({
-          role: "user",
-          content: result.content as string,
-        });
+    // 1) Procesa cada functionCall en candidate.content.parts
+    if (candidate?.content?.parts)
+      try {
+        for (const part of candidate.content.parts) {
+          if (!part.functionCall) continue;
+          const { name, args } = part.functionCall;
+          if (!name) throw new Error("Value name is undefined");
+          finalText.push(
+            JSON.stringify(response.candidates?.[0]?.content?.parts, null, 2)
+          );
 
-        const response = await this.llm.messages.create({
-          model: "claude-3-5-sonnet-20241022",
-          max_tokens: 1000,
-          messages,
-        });
+          if (part.functionCall) {
+            if (part.functionCall.name) {
+              toolCallNames.push(part.functionCall.name);
+            }
+            console.log("Argumentos:", part.functionCall.args);
+          }
+          if (part.text) {
+            console.log("Texto plano:", part.text);
+          }
+          // Ejecuta la función original y actualiza el history
+          const result = await processFunctionCall(name[0], args);
+          conversationHistory.push({
+            role: "model",
+            parts: [{ functionCall: part.functionCall }],
+          });
+          conversationHistory.push({
+            role: "user",
+            parts: [{ text: `Resultado de la función: ${result}` }],
+          });
 
-        if (response.content[0] && response.content[0].type === "text") {
-          finalText.push(response.content[0].text);
+          // 2) Primer follow-up
+          const followupResponse = await callLLM(conversationHistory);
+          if (followupResponse.text) finalText.push(followupResponse.text);
+
+          const followupCandidate = followupResponse.candidates?.[0];
+          if (!followupCandidate?.content?.parts) continue;
+
+          // 3) Procesa cada part de followupCandidate
+          for (const followupPart of followupCandidate.content.parts) {
+            if (followupPart.functionCall) {
+              const { name: fn2, args: args2 } = followupPart.functionCall;
+              const result2 = await processFunctionCall(
+                fn2 ?? "default_function_name",
+                args2
+              );
+              conversationHistory.push({
+                role: "model",
+                parts: [{ functionCall: followupPart.functionCall }],
+              });
+              conversationHistory.push({
+                role: "user",
+                parts: [
+                  {
+                    text: `Resultados de la funcion de la tabla especifica: ${result2}`,
+                  },
+                ],
+              });
+            }
+            if (followupPart.text) {
+              finalText.push(followupPart.text);
+            }
+          }
+
+          // 4) Segunda follow-up: lectura de datos de solo lectura
+          const readOnlyQuery = await callLLM(conversationHistory);
+          if (readOnlyQuery.text) finalText.push(readOnlyQuery.text);
+
+          const finalData = readOnlyQuery.candidates?.[0];
+          // 5) Procesa finalData parts
+          if (finalData?.content?.parts)
+            for (const data of finalData.content.parts) {
+              if (!data.functionCall) continue;
+              const { name: fn3, args: args3 } = data.functionCall;
+              const processData = await processFunctionCall(
+                fn3 ?? "default_function_name",
+                args3
+              );
+              conversationHistory.push({
+                role: "model",
+                parts: [{ functionCall: data.functionCall }],
+              });
+              conversationHistory.push({
+                role: "user",
+                parts: [{ text: `Datos de la tabla: ${processData}` }],
+              });
+
+              // 6) Tercer follow-up
+              let finalResponse = await callLLM(conversationHistory);
+              console.log("Final response:", finalResponse.text);
+              if (finalResponse.text?.includes("error")) {
+                // Reintentos controlados
+                let retry = 0;
+                const MAX = 3;
+                console.log("ERROR: ", finalResponse.text);
+                while (
+                  retry < MAX &&
+                  (finalResponse.text ?? "").includes("error")
+                ) {
+                  retry++;
+                  const errCand =
+                    finalResponse.candidates?.[0]?.content?.parts ?? [];
+                  for (const errPart of errCand) {
+                    if (!errPart.functionCall) continue;
+                    const dataRepeat = await processFunctionCall(
+                      errPart.functionCall.name ?? "default_function_name",
+                      errPart.functionCall.args
+                    );
+                    conversationHistory.push({
+                      role: "user",
+                      parts: [{ text: `Tablas: ${dataRepeat}` }],
+                    });
+                  }
+                  finalResponse = await callLLM(conversationHistory);
+                  if (finalResponse.text) finalText.push(finalResponse.text);
+                }
+                if (finalResponse.text?.includes("error")) {
+                  console.warn(
+                    "Se alcanzó el máximo de reintentos y aún hay error:",
+                    finalResponse.text
+                  );
+                }
+              } else if (finalResponse.text) {
+                finalText.push(finalResponse.text);
+              }
+            }
+        }
+      } catch (error: any) {
+        if (error.error) {
+          console.log("Codigo de error: ", error.error.code);
+          console.log("Mensaje de error: ", error.error.message);
         }
       }
-    }
-
-    return finalText.join("\n");
+    const finalResponseForLlm: ChatMessage = {
+      functionCall: { name: toolCallNames },
+      finalText: { text: finalText },
+    };
+    return finalResponseForLlm;
   }
 
-  async chatLoop() {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
-
-    try {
-      console.log("\nMCP Client Started!");
-      console.log("Type your queries or 'quit' to exit.");
-
-      while (true) {
-        const message = await rl.question("\nQuery: ");
-        if (message.toLowerCase() === "quit") {
-          break;
-        }
-        const response = await this.processQuery(message);
-        console.log("\n" + response);
-      }
-    } finally {
-      rl.close();
-    }
-  }
-
+  /** Cierra la conexión al MCP */
   async cleanup() {
     await this.mcp.close();
   }
-
-
-  async main() {
-    if (!process.env.PATH_TO_SERVER) {
-      throw new Error('Falta el path del server')
-    }
-    const mcpClient = new MCPClient();
-    try {
-      await mcpClient.connectToServer(process.env.PATH_TO_SERVER);
-      await mcpClient.chatLoop();
-    } finally {
-      await mcpClient.cleanup();
-      process.exit(0);
-    }
-  }
-  
 }
-

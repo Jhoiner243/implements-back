@@ -27,9 +27,11 @@ export class App {
 
     start(): void {
     this.middlewaresSetup.init(this.app)
+    this.mcpClient.connectToServer()
     this.routesSetup.setup(this.app)
     const server = this.serverSetup.create(this.app, this.port)
-
+    
    this.terminusSetup.setup(server)
+   this.mcpClient.cleanup()
   }
 }

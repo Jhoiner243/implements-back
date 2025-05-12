@@ -1,15 +1,24 @@
 -- CreateEnum
+CREATE TYPE "TipoPeriodo" AS ENUM ('Diario', 'Mensual', 'Semanal', 'Anual');
+
+-- CreateEnum
+CREATE TYPE "StatusEmail" AS ENUM ('Success', 'Failed');
+
+-- CreateEnum
 CREATE TYPE "Role" AS ENUM ('ADMIN', 'USER');
+
+-- CreateEnum
+CREATE TYPE "StatusFactura" AS ENUM ('Pagada', 'Pendiente', 'Fiada', 'Vencida');
 
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
+    "token" TEXT,
     "username" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "lastname" TEXT NOT NULL,
     "password" TEXT NOT NULL,
-    "roleId" TEXT NOT NULL,
     "is_verified" BOOLEAN NOT NULL DEFAULT false,
     "verified_at" TIMESTAMP(3) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -21,8 +30,8 @@ CREATE TABLE "User" (
 -- CreateTable
 CREATE TABLE "Factura" (
     "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "clienteId" TEXT NOT NULL,
+    "id_cliente" TEXT NOT NULL,
+    "status" "StatusFactura" NOT NULL DEFAULT 'Pendiente',
     "total" DOUBLE PRECISION NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -101,6 +110,16 @@ CREATE TABLE "Notifications" (
 );
 
 -- CreateTable
+CREATE TABLE "tokens" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "tokens_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Clientes" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -131,6 +150,27 @@ CREATE TABLE "Roles" (
     CONSTRAINT "Roles_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "ProfitSummary" (
+    "id" TEXT NOT NULL,
+    "fecha_inicio" TIMESTAMP(3) NOT NULL,
+    "fecha_fin" TIMESTAMP(3) NOT NULL,
+    "ganancia_total" DOUBLE PRECISION NOT NULL,
+    "tipo_periodo" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ProfitSummary_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "EmailLog" (
+    "id" TEXT NOT NULL,
+    "facturaId" TEXT NOT NULL,
+    "status" "StatusEmail" NOT NULL,
+
+    CONSTRAINT "EmailLog_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -138,13 +178,7 @@ CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
 
 -- AddForeignKey
-ALTER TABLE "User" ADD CONSTRAINT "User_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Roles"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Factura" ADD CONSTRAINT "Factura_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Factura" ADD CONSTRAINT "Factura_clienteId_fkey" FOREIGN KEY ("clienteId") REFERENCES "Clientes"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Factura" ADD CONSTRAINT "Factura_id_cliente_fkey" FOREIGN KEY ("id_cliente") REFERENCES "Clientes"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Detalle_factura" ADD CONSTRAINT "Detalle_factura_facturaId_fkey" FOREIGN KEY ("facturaId") REFERENCES "Factura"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

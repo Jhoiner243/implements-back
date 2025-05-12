@@ -7,6 +7,7 @@ import { AuthController } from '../../controllers/auth.controller';
 import { ClienteController } from '../../controllers/cliente.controller';
 import { FacturaController } from '../../controllers/facturas.controller';
 import { GananciasController } from '../../controllers/ganancias.controller';
+import { McpController } from '../../controllers/mcp.controller';
 import { NotificationsController } from '../../controllers/notification-stock.controller';
 import { ProductoController } from '../../controllers/producto.controller';
 
@@ -29,6 +30,7 @@ export class RoutesSetup {
         NotificationsController,
         AnaliticsController,
         AuthController,
+        McpController,
         GananciasController
       ]
     })
