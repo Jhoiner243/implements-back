@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const DetallesFacturasEntitySchema = z.object({
   id_producto: z.string(),
-  cantidad: z.number(),
+  cantidad: z.number().min(1),
   precio_venta: z.number(),
 });
 

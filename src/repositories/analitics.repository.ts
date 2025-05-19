@@ -7,8 +7,8 @@ import { Analytics } from "../ts/interfaces/analitics.interface";
 export class AnaliticsRepository implements Analytics {
   async getAnalitIcsPedidos(): Promise<FacturasEntity[]> {
     const result = await db.factura.findMany({
-      include: {detalles: true},
-      cacheStrategy: {ttl: 60}
+      include: { detalles: true },
+      cacheStrategy: { ttl: 60 },
     });
     const facturas = result.map((factura) => {
       return {
@@ -35,8 +35,8 @@ export class AnaliticsRepository implements Analytics {
   async getAnaliticsClientes() {
     const result = await db.clientes.findMany({
       cacheStrategy: {
-        ttl: 60
-      }
+        ttl: 60,
+      },
     });
     return result;
   }
@@ -44,8 +44,8 @@ export class AnaliticsRepository implements Analytics {
   async getAnaliticsProductos() {
     const result = await db.productos.findMany({
       cacheStrategy: {
-        ttl: 60
-      }
+        ttl: 60,
+      },
     });
     return result;
   }

@@ -44,6 +44,7 @@ export class McpController {
     const { prompt } = req.body;
     console.log(prompt);
     const response = await this.mcpClient.processQuery(prompt);
+    console.log("RESPONSE EN CONTROLLER: ", response);
     return { role: "assitent", messages: response };
   }
 

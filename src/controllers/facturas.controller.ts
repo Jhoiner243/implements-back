@@ -1,56 +1,70 @@
 import { Response } from "express";
 import { inject } from "inversify";
-import { Body, Delete, Get, JsonController, Param, Post, Put, Res } from "routing-controllers";
-import { FacturasEntity } from "../entities/facturas.entity";
+import {
+  Body,
+  Delete,
+  Get,
+  JsonController,
+  Param,
+  Post,
+  Put,
+  Res,
+} from "routing-controllers";
+import { ZodError } from "zod";
+import { FacturaSeccion, FacturasEntity } from "../entities/facturas.entity";
 import { FacturaService } from "../services/factura.service";
 import { AppError } from "../utils/errors/app-errors";
 
 @JsonController()
 export class FacturaController {
-  constructor(@inject(FacturaService) private facturaService: FacturaService){}
+  constructor(@inject(FacturaService) private facturaService: FacturaService) {}
 
   @Post("/factura")
-  async dataFact(@Res() res: Response, @Body() data: FacturasEntity){
-    const { message } = await this.facturaService.dataFact(data)
+  async dataFact(@Body() data: FacturasEntity) {
+    try {
+      const { message } = await this.facturaService.dataFact(data);
 
-    res.json(message)
+      return message;
+    } catch (err) {
+      if (err instanceof AppError) {
+        return err.message;
+      }
+      if (err instanceof ZodError) {
+        return err.message;
+      }
+    }
   }
   @Get("/facturas")
-  async getFact(@Res() res: Response){
+  async getFact(@Res() res: Response) {
     try {
-      const facturas = await this.facturaService.getFact()
+      const facturas = await this.facturaService.getFact();
 
-      return res.status(200).json(facturas)
-    } catch (err){
-      if(err instanceof AppError){
-				return res.status(err.status).json({ message: err.message });
+      return res.status(200).json(facturas);
+    } catch (err) {
+      if (err instanceof AppError) {
+        return res.status(err.status).json({ message: err.message });
       }
-      return res.status(500).json("Error de de sevidor interno")
+      return res.status(500).json("Error de de sevidor interno");
     }
   }
-  @Put('/facturas/:id')
-  async putFact(@Res() res: Response,@Body() Data: Partial<FacturasEntity>, @Param("id") id: string){
-    try {
-      const validData: FacturasEntity = {
-        ...Data,
-        detalles: Data.detalles || []
-      } as FacturasEntity;
+  @Put("/facturas/:id")
+  async putFact(
+    @Body() data: Partial<FacturaSeccion>,
+    @Param("id") id: string
+  ) {
+    console.log("DATA: ", data);
+    const { message } = await this.facturaService.updateFact(id, data);
 
-      const {message} = await this.facturaService.updateFact(id, validData);
-
-      return res.json(message)
-    } catch{
-      return res.status(500).json({message: 'Error de servidor interno'})
-    }
+    return message;
   }
 
-  @Delete('/facturas/:id')
-  async deleteFact(@Res() res: Response,@Param('id') id: string){
+  @Delete("/facturas/:id")
+  async deleteFact(@Res() res: Response, @Param("id") id: string) {
     try {
-      const message = this.facturaService.deleteFact(id)
-      return res.status(200).json(message)
-    } catch{
-      return res.status(500).json({message: 'Error de servidor interno'})
+      const message = this.facturaService.deleteFact(id);
+      return res.status(200).json(message);
+    } catch {
+      return res.status(500).json({ message: "Error de servidor interno" });
     }
   }
 }

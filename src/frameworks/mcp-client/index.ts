@@ -14,7 +14,7 @@ import dotenv from "dotenv";
 import { inject, injectable } from "inversify";
 import { URL_API } from "../../config/configs";
 import { McpService } from "../../services/mcp.service";
-import { ChatMessage } from "./type";
+import { ChatMessage, funcionCall } from "./type";
 
 dotenv.config();
 
@@ -70,7 +70,7 @@ export class MCPClient {
    * 2. Si el LLM responde un tool_use, invoca mcp.callTool(...)
    * 3. Alimenta la respuesta de la herramienta de vuelta al LLM
    */
-  async processQuery(query: string): Promise<ChatMessage> {
+  async processQuery(query: string): Promise<ChatMessage[]> {
     const finalText: string[] = [];
     //Definiendo la funcion call con declaraciones
     const setValuesFunctionCall = {
@@ -152,7 +152,7 @@ export class MCPClient {
       },
     ];
 
-    const toolCallNames: string[] | undefined = [];
+    const toolCallNames: funcionCall[] = [];
 
     const response = await this.llm.models.generateContent({
       model: "gemini-2.5-flash-preview-04-17",
@@ -163,6 +163,7 @@ export class MCPClient {
       switch (name) {
         case "call_tool": {
           const resources = await this.mcpService.listResources();
+          console.log(resources.resources);
           return JSON.stringify(resources.resources);
         }
         case "call_tool_repeat": {
@@ -179,7 +180,11 @@ export class MCPClient {
           const schema = await this.mcpService.readResourceSchema({
             uri: args.uri,
           });
-          return JSON.stringify(schema.contents[0].text);
+          console.log(
+            "READ_RESOURCE:",
+            JSON.stringify(schema.contents[0].text)
+          );
+          return JSON.stringify(schema.contents);
         }
 
         default:
@@ -189,7 +194,12 @@ export class MCPClient {
     const candidate = response.candidates?.[0];
 
     if (response.text) {
-      finalText.push(response.text);
+      if (!response.functionCalls) {
+        finalText.push(response.text);
+        return finalText.map(
+          (text) => ({ finalText: { text } } as ChatMessage)
+        );
+      }
     }
     // Helper interno para llamar a la LLM con tool calling siempre
     const callLLM = async (history: Content[]) => {
@@ -207,21 +217,19 @@ export class MCPClient {
           if (!part.functionCall) continue;
           const { name, args } = part.functionCall;
           if (!name) throw new Error("Value name is undefined");
-          finalText.push(
-            JSON.stringify(response.candidates?.[0]?.content?.parts, null, 2)
-          );
-
+          if (part.text) {
+            finalText.push(JSON.stringify(part.text));
+          }
           if (part.functionCall) {
             if (part.functionCall.name) {
-              toolCallNames.push(part.functionCall.name);
+              toolCallNames.push({
+                name: part.functionCall.name,
+                args: part.functionCall.args,
+              });
             }
-            console.log("Argumentos:", part.functionCall.args);
-          }
-          if (part.text) {
-            console.log("Texto plano:", part.text);
           }
           // Ejecuta la función original y actualiza el history
-          const result = await processFunctionCall(name[0], args);
+          const result = await processFunctionCall(name, args);
           conversationHistory.push({
             role: "model",
             parts: [{ functionCall: part.functionCall }],
@@ -241,6 +249,10 @@ export class MCPClient {
           // 3) Procesa cada part de followupCandidate
           for (const followupPart of followupCandidate.content.parts) {
             if (followupPart.functionCall) {
+              toolCallNames.push({
+                name: followupPart.functionCall.name,
+                args: followupPart.functionCall.args,
+              });
               const { name: fn2, args: args2 } = followupPart.functionCall;
               const result2 = await processFunctionCall(
                 fn2 ?? "default_function_name",
@@ -273,22 +285,27 @@ export class MCPClient {
           if (finalData?.content?.parts)
             for (const data of finalData.content.parts) {
               if (!data.functionCall) continue;
-              const { name: fn3, args: args3 } = data.functionCall;
-              const processData = await processFunctionCall(
-                fn3 ?? "default_function_name",
-                args3
-              );
-              conversationHistory.push({
-                role: "model",
-                parts: [{ functionCall: data.functionCall }],
-              });
-              conversationHistory.push({
-                role: "user",
-                parts: [{ text: `Datos de la tabla: ${processData}` }],
-              });
+              if (data.functionCall && data.functionCall.name) {
+                const { name: fn3, args: args3 } = data.functionCall;
+                toolCallNames.push({ name: fn3, args: args3 });
+                const processData = await processFunctionCall(fn3, args3);
 
+                conversationHistory.push({
+                  role: "model",
+                  parts: [{ functionCall: data.functionCall }],
+                });
+                conversationHistory.push({
+                  role: "user",
+                  parts: [{ text: `Datos de la tabla: ${processData}` }],
+                });
+              }
               // 6) Tercer follow-up
               let finalResponse = await callLLM(conversationHistory);
+              if (finalResponse.functionCalls)
+                toolCallNames.push({
+                  name: finalResponse.functionCalls[0].name,
+                  args: finalResponse.functionCalls[0].args,
+                });
               console.log("Final response:", finalResponse.text);
               if (finalResponse.text?.includes("error")) {
                 // Reintentos controlados
@@ -333,10 +350,30 @@ export class MCPClient {
           console.log("Mensaje de error: ", error.error.message);
         }
       }
-    const finalResponseForLlm: ChatMessage = {
-      functionCall: { name: toolCallNames },
-      finalText: { text: finalText },
-    };
+    const finalResponseForLlm: ChatMessage[] = toolCallNames.map(
+      (toolsCalls) => ({
+        functionCall: { name: toolsCalls.name, args: toolsCalls.args },
+        finalText: { text: finalText },
+      })
+    );
+    conversationHistory.push({
+      role: "user",
+      parts: [
+        {
+          text: `Esta es la respuesta final, da una respuesta estructurada y bien explicada del resultado final explicando que se hizo para obtener esa respuesta y demas cosas y si no se obtuvo una respuesta esperada hazle saber al usuario que reintente : ${finalResponseForLlm}`,
+        },
+      ],
+    });
+    const endResponse = await callLLM(conversationHistory);
+
+    if (endResponse.functionCalls && endResponse.text) {
+      await this.processQuery(endResponse.text);
+    }
+
+    if (endResponse.text) {
+      finalResponseForLlm.push({ finalText: { text: [endResponse.text] } });
+      return finalResponseForLlm;
+    }
     return finalResponseForLlm;
   }
 
