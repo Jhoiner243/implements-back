@@ -21,7 +21,23 @@ export class GananciasRepository implements IGanancias {
       },
     });
   }
-
+  async updateProfitDiario({
+    ganancia_total,
+    id,
+  }: {
+    ganancia_total: number;
+    id: string;
+  }): Promise<void> {
+    const profitDiario = await db.profitSummary.update({
+      where: {
+        id: id,
+      },
+      data: {
+        ganancia_total: ganancia_total,
+      },
+    });
+    console.log(profitDiario);
+  }
   async getProfit(): Promise<GananciasEntity[]> {
     return db.profitSummary.findMany();
   }

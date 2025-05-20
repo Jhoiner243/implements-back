@@ -12,9 +12,4 @@ export function startProfitCronJob(gananciasService: GananciasService) {
     await gananciasService.calculateProfit({ tipo_periodo: "Mensual" });
     console.log("✅ Ganancias calculadas y guardadas.");
   });
-  cron.schedule("0 59 23 * * *", async () => {
-    console.log("⏳ Ejecutando cálculo de ganancias diaria...");
-    await gananciasService.calculateProfit({ tipo_periodo: "Diario" });
-    console.log("✅ Ganancias calculadas y guardadas.");
-  });
 }

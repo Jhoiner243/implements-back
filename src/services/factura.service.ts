@@ -3,11 +3,13 @@ import { FacturaSeccion, FacturasEntity } from "../entities/facturas.entity";
 import { FacturaRepository } from "../repositories/factura.repository";
 import { FacturasEntitySchema } from "../ts/validations/factura.validations";
 import { AppError } from "../utils/errors/app-errors";
+import { DiaryProfit } from "./diary-profit.service";
 
 @injectable()
 export class FacturaService {
   constructor(
-    @inject(FacturaRepository) private facturaRepository: FacturaRepository
+    @inject(FacturaRepository) private facturaRepository: FacturaRepository,
+    @inject(DiaryProfit) private diaryProfit: DiaryProfit
   ) {}
 
   async dataFact(data: FacturasEntity): Promise<{ message: string }> {
@@ -27,6 +29,20 @@ export class FacturaService {
 
       // Enviamos datos validados
       await this.facturaRepository.dataFact(facturaWithCreatedAt);
+
+      const diary = facturaWithCreatedAt.detalles.map((detalle) => ({
+        precio_venta: detalle.precio_venta,
+        cantidad: detalle.cantidad,
+        id_producto: detalle.id_producto,
+        fecha: facturaWithCreatedAt.createdAt,
+      }));
+
+      await this.diaryProfit.calculateProfitDiario({
+        cantidad: diary[0].cantidad,
+        id_producto: diary[0].id_producto,
+        precio_venta: diary[0].precio_venta,
+        fecha: diary[0].fecha,
+      });
 
       return { message: "Factura creada exitosamente" };
     } catch (err) {

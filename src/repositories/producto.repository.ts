@@ -60,4 +60,25 @@ export class ProductoRepository implements IProductos {
     const category = await db.category.findMany();
     return category;
   }
+  async updateProducto(
+    id_producto: string,
+    data: Partial<ProductoEntity>
+  ): Promise<{ message: string }> {
+    await db.productos.update({
+      where: { id: id_producto },
+      data: {
+        nombre: data.nombre,
+        precio_compra: data.precio_compra,
+        stock: data.stock,
+        categoryId: data.categoryId,
+      },
+    });
+    return { message: "Producto actualizado exitosamente" };
+  }
+  async getById(id_producto: string): Promise<ProductoEntity | null> {
+    const producto = await db.productos.findUnique({
+      where: { id: id_producto },
+    });
+    return producto;
+  }
 }

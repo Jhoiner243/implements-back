@@ -7,6 +7,7 @@ import {
   JsonController,
   Param,
   Post,
+  Put,
   Res,
 } from "routing-controllers";
 import {
@@ -61,6 +62,17 @@ export class ProductoController implements BaseController {
     return message;
   }
 
+  @Put("/productos/:id")
+  async updateProducto(
+    @Param("id") id: string,
+    @Body() data: Partial<ProductoEntity>
+  ) {
+    const { message } = await this.productoService.updateProduct({
+      data: data,
+      id: id,
+    });
+    return message;
+  }
   @Get("/category")
   async getCategory(@Res() res: Response) {
     try {
