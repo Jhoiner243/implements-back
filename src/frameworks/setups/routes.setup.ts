@@ -1,4 +1,5 @@
 import { CorsOptions } from "cors";
+import dotenv from "dotenv";
 import { Express } from "express";
 import { injectable } from "inversify";
 import { useExpressServer } from "routing-controllers";
@@ -10,9 +11,10 @@ import { GananciasController } from "../../controllers/ganancias.controller";
 import { McpController } from "../../controllers/mcp.controller";
 import { NotificationsController } from "../../controllers/notification-stock.controller";
 import { ProductoController } from "../../controllers/producto.controller";
+dotenv.config();
 
 const corsOptions: CorsOptions = {
-  origin: "http://localhost:5173", // Asegúrate de que este sea el origen correcto
+  origin: process.env.URL_PORT_FRONTEND, // Asegúrate de que este sea el origen correcto
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
   allowedHeaders: [
