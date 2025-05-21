@@ -4,15 +4,15 @@ import { appContainer } from "../../containers/app.container";
 import { isProtectedRoutes } from "../../utils/isProtectedRoutes";
 import { JwtAuth } from "../jwt";
 
-@Middleware({type: "before"})
+@Middleware({ type: "before" })
 export class AuthGuard {
-  use(req: Request, res: Response, next: NextFunction) {
-    const isProtected = isProtectedRoutes(req.path)
+  async use(req: Request, res: Response, next: NextFunction) {
+    const isProtected = isProtectedRoutes(req.path);
 
-    if(!isProtected) {
-      return next()
+    if (!isProtected) {
+      return next();
     }
     const jwtAuth = appContainer.get(JwtAuth);
-    jwtAuth.authenticate(req, res, next);
+    await jwtAuth.authenticate(req, res, next);
   }
 }

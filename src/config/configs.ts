@@ -4,7 +4,7 @@ dotenv.config();
 export const {
   PORT,
   DATABASE_URL,
-  URL_API = 'http://localhost:3001/tool/query/stream',
+  URL_API = "http://localhost:3001/tool/query/stream",
   GOOGLE_APPLICATION_CREDENTIALS,
   COOKIE_HTTP_ONLY = true,
   COOKIE_SAME_SITE = "strict",

@@ -13,9 +13,10 @@ import {
 import { MCPClient } from "../frameworks/mcp-client";
 import { LlmResponse } from "../frameworks/mcp-client/type";
 import { McpService } from "../services/mcp.service";
+import { BaseController } from "./base.controller";
 
 @JsonController()
-export class McpController {
+export class McpController implements BaseController {
   constructor(
     @inject(McpService) private readonly service: McpService,
     @inject(MCPClient) private mcpClient: MCPClient
@@ -42,9 +43,7 @@ export class McpController {
   @Post("/tools/query")
   async postQuery(@Req() req: Request): Promise<LlmResponse> {
     const { prompt } = req.body;
-    console.log(prompt);
     const response = await this.mcpClient.processQuery(prompt);
-    console.log("RESPONSE EN CONTROLLER: ", response);
     return { role: "assitent", messages: response };
   }
 

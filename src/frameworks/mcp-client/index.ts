@@ -14,6 +14,7 @@ import dotenv from "dotenv";
 import { inject, injectable } from "inversify";
 import { URL_API } from "../../config/configs";
 import { McpService } from "../../services/mcp.service";
+import { AppError } from "../../utils/errors/app-errors";
 import { ChatMessage, funcionCall } from "./type";
 
 dotenv.config();
@@ -163,7 +164,6 @@ export class MCPClient {
       switch (name) {
         case "call_tool": {
           const resources = await this.mcpService.listResources();
-          console.log(resources.resources);
           return JSON.stringify(resources.resources);
         }
         case "call_tool_repeat": {
@@ -180,10 +180,7 @@ export class MCPClient {
           const schema = await this.mcpService.readResourceSchema({
             uri: args.uri,
           });
-          console.log(
-            "READ_RESOURCE:",
-            JSON.stringify(schema.contents[0].text)
-          );
+
           return JSON.stringify(schema.contents);
         }
 
@@ -306,12 +303,10 @@ export class MCPClient {
                   name: finalResponse.functionCalls[0].name,
                   args: finalResponse.functionCalls[0].args,
                 });
-              console.log("Final response:", finalResponse.text);
               if (finalResponse.text?.includes("error")) {
                 // Reintentos controlados
                 let retry = 0;
                 const MAX = 3;
-                console.log("ERROR: ", finalResponse.text);
                 while (
                   retry < MAX &&
                   (finalResponse.text ?? "").includes("error")
@@ -345,10 +340,10 @@ export class MCPClient {
             }
         }
       } catch (error: any) {
-        if (error.error) {
-          console.log("Codigo de error: ", error.error.code);
-          console.log("Mensaje de error: ", error.error.message);
-        }
+        throw new AppError(
+          `Error al procesar la consulta: ${error.message}`,
+          500
+        );
       }
     const finalResponseForLlm: ChatMessage[] = toolCallNames.map(
       (toolsCalls) => ({
@@ -360,14 +355,14 @@ export class MCPClient {
       role: "user",
       parts: [
         {
-          text: `Esta es la respuesta final, da una respuesta estructurada y bien explicada del resultado final explicando que se hizo para obtener esa respuesta y demas cosas y si no se obtuvo una respuesta esperada hazle saber al usuario que reintente : ${finalResponseForLlm}`,
+          text: `Esta es la respuesta final, da una respuesta estructurada y bien explicada del resultado final explicando que se hizo para obtener esa respuesta y demas cosas y si no se obtuvo una respuesta esperada hazle saber al usuario que reintente : ${finalResponseForLlm}, y este es el prompt de la consulta: ${query} determina si el resultado es el esperado y si no ejecuta de nuevo un tool_use para obtener el resultado esperado`,
         },
       ],
     });
     const endResponse = await callLLM(conversationHistory);
 
-    if (endResponse.functionCalls && endResponse.text) {
-      await this.processQuery(endResponse.text);
+    if (endResponse.functionCalls) {
+      await this.processQuery(query);
     }
 
     if (endResponse.text) {

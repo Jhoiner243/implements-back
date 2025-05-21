@@ -14,9 +14,10 @@ import { ZodError } from "zod";
 import { FacturaSeccion, FacturasEntity } from "../entities/facturas.entity";
 import { FacturaService } from "../services/factura.service";
 import { AppError } from "../utils/errors/app-errors";
+import { BaseController } from "./base.controller";
 
 @JsonController()
-export class FacturaController {
+export class FacturaController implements BaseController {
   constructor(@inject(FacturaService) private facturaService: FacturaService) {}
 
   @Post("/factura")
@@ -52,7 +53,6 @@ export class FacturaController {
     @Body() data: Partial<FacturaSeccion>,
     @Param("id") id: string
   ) {
-    console.log("DATA: ", data);
     const { message } = await this.facturaService.updateFact(id, data);
 
     return message;
