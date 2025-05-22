@@ -33,6 +33,15 @@ jobs:
           echo "$GCP_SA_KEY" > maxpollo.json
           echo "$SECRETS_ENVIRONMENT" > .env
 
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/jhoiner243/implements-back:latest
+            ghcr.io/jhoiner243/implements-back:${{ github.sha }}
+
   deploy:
     needs: create-and-push-image
     runs-on: ubuntu-latest
@@ -44,4 +53,3 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }} # Obligatorio: tu User Token
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }} # Obligatorio: tu Org/Team ID
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }} # Obligatorio: tu Project ID
-
