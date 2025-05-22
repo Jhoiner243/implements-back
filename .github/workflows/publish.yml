@@ -34,6 +34,22 @@ jobs:
     needs: create-and-push-image
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Create GCP service account key file
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+        run: |
+          echo "$GCP_SA_KEY" > gcp-key.json
+
+      - name: Authenticate to Google Cloud
+        run: |
+          curl -sSL https://sdk.cloud.google.com | bash > /dev/null
+          source $HOME/google-cloud-sdk/path.bash.inc
+          gcloud auth activate-service-account --key-file=gcp-key.json
+          gcloud config set project your-project-id
+
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
