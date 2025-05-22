@@ -33,15 +33,6 @@ jobs:
           echo "$GCP_SA_KEY" > maxpollo.json
           echo "$SECRETS_ENVIRONMENT" > .env
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          push: true
-          tags: |
-            ghcr.io/jhoiner243/implements-back:latest
-            ghcr.io/jhoiner243/implements-back:${{ github.sha }}
-
   deploy:
     needs: create-and-push-image
     runs-on: ubuntu-latest
