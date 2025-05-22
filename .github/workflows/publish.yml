@@ -46,9 +46,11 @@ jobs:
     needs: create-and-push-image
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to Firebase Hosting
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          projectId: fillstep
+      - name: Install vercel CLI
+        run: pnpm i -g vercel@latest
+      - name: Pull vercel enviorment
+        run: vercel pull --yes --environment production --token ${{ secrets.VERCEL_TOKEN }}
+      - name: Deploy to Vercel
+        uses: BetaHuhn/deploy-to-vercel-action@v1
+      - name: Deploy to Vercel
+        run: vercel --prod --confirm --token ${{ secrets.VERCEL_TOKEN }} --env-file .env
