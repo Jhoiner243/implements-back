@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install vercel CLI
-        run: pnpm i -g vercel@latest
+        run: npm i -g vercel@latest
       - name: Pull vercel enviorment
         run: vercel pull --yes --environment production --token ${{ secrets.VERCEL_TOKEN }}
       - name: Deploy to Vercel
