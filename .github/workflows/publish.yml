@@ -40,9 +40,8 @@ jobs:
       - name: Deploy to Vercel
         uses: BetaHuhn/deploy-to-vercel-action@v1
         with:
+          github-token: ${{ secrets.GH_PAT }} # Opcional: para comentar en PRs
           vercel-token: ${{ secrets.VERCEL_TOKEN }} # Obligatorio: tu User Token
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }} # Obligatorio: tu Org/Team ID
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }} # Obligatorio: tu Project ID
-          vercel-args: "--prod" # Pasa flags al CLI (aquí, despliegue en prod)
-          github-token: ${{ secrets.GITHUB_TOKEN }} # Opcional: para comentar en PRs
 
