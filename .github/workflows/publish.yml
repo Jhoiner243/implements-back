@@ -27,8 +27,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/implements-back:latest
-            ghcr.io/${{ github.repository_owner }}/implements-back:${{ github.sha }}
+            ghcr.io/jhoiner243/implements-back:latest
+            ghcr.io/jhoiner243/implements-back:${{ github.sha }}
 
   deploy:
     needs: create-and-push-image
