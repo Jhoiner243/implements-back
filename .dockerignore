@@ -1,5 +1,5 @@
 *
-
+!./env
 !/.env.prod
 !/package.json
 !/pnpm-lock.yaml
