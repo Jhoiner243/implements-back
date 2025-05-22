@@ -22,8 +22,8 @@ RUN pnpm install --frozen-lockfile --shamefully-hoist
 COPY . .
 
 # 6. Generamos Prisma Client y compilamos
-RUN pnpm run prisma:generate \
- && pnpm run build
+RUN pnpm run prisma:generate 
+RUN pnpm run build
 
 # Etapa 2: Runner
 FROM node:22-alpine AS runner
@@ -44,7 +44,6 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/maxpollo.json ./maxpollo.json
-COPY --from=builder /app/.env ./.env
 
 EXPOSE 3003
 
