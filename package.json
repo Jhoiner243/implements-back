@@ -9,7 +9,7 @@
     "build": "tsc",
     "build:clean": "rimraf dist",
     "lint": "eslint --ext .ts src",
-    "prisma:generate": "prisma generate",
+    "prisma:generate": "prisma generate --no-engine",
     "prisma:generate:watch": "prisma generate --watch",
     "prisma:migrate": "pnpx prisma migrate deploy",
     "prisma:studio": "prisma studio",

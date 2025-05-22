@@ -355,15 +355,11 @@ export class MCPClient {
       role: "user",
       parts: [
         {
-          text: `Esta es la respuesta final, da una respuesta estructurada y bien explicada del resultado final explicando que se hizo para obtener esa respuesta y demas cosas y si no se obtuvo una respuesta esperada hazle saber al usuario que reintente : ${finalResponseForLlm}, y este es el prompt de la consulta: ${query} determina si el resultado es el esperado y si no ejecuta de nuevo un tool_use para obtener el resultado esperado`,
+          text: `Esta es la respuesta final, da una respuesta estructurada y bien explicada del resultado final explicando que se hizo para obtener esa respuesta y demas cosas y si no se obtuvo una respuesta esperada hazle saber al usuario que reintente : ${finalResponseForLlm}`,
         },
       ],
     });
     const endResponse = await callLLM(conversationHistory);
-
-    if (endResponse.functionCalls) {
-      await this.processQuery(query);
-    }
 
     if (endResponse.text) {
       finalResponseForLlm.push({ finalText: { text: [endResponse.text] } });
