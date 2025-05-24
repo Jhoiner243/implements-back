@@ -141,6 +141,13 @@ model ProfitSummary {
   createdAt      DateTime    @default(now())
 }
 
+model GrowtRate {
+  id String @id @default(uuid())
+  porcentaje Float
+  fechaActual String
+  fechaAnterior String
+  tipoPeriodo TipoPeriodo
+}
 model EmailLog {
   id         String     @id @default(uuid())
   facturaId  String

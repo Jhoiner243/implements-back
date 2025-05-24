@@ -1,21 +1,22 @@
 import { TipoPeriodo } from "@prisma/client";
 import { differenceInCalendarDays, format, startOfDay } from "date-fns";
-import { injectable } from "inversify";
+import { inject, injectable } from "inversify";
 import { z } from "zod";
+import { AnaliticsRepository } from "../repositories/analitics.repository";
 
 // Tipos de datos para los periodos
-interface DataPeriodos {
+export interface DataPeriodos {
   total: number;
   fecha: Date;
 }
 
-interface IGrowthRate {
+export interface IGrowthRate {
   tipoPeriodo: TipoPeriodo;
   ganaciaTotalActual: DataPeriodos;
   periodoAnterior: DataPeriodos;
 }
 
-interface ResultPeriodoRate {
+export interface ResultPeriodoRate {
   periodo: TipoPeriodo;
   fechas: {
     fechaActual: string;
@@ -39,14 +40,13 @@ const schemaGrowthRate = z.object({
 
 @injectable()
 export class GrowthRateService {
+  constructor(
+    @inject(AnaliticsRepository) private growtRepository: AnaliticsRepository
+  ) {}
   /**
    * Calcula el porcentaje de crecimiento entre dos periodos.
    */
-  async earningPeriod({
-    data,
-  }: {
-    data: IGrowthRate;
-  }): Promise<ResultPeriodoRate> {
+  async earningPeriod({ data }: { data: IGrowthRate }) {
     if (!data) {
       throw new Error("No hay datos de periodos");
     }
@@ -71,7 +71,7 @@ export class GrowthRateService {
         ? 100 // si no hay valor anterior, consideramos 100% de crecimiento
         : (diferencia / periodoAnterior.total) * 100;
 
-    return {
+    const response = {
       periodo: tipoPeriodo,
       fechas: {
         fechaActual,
@@ -79,10 +79,13 @@ export class GrowthRateService {
       },
       growthRate: Number(growthRate), // opcional: redondeo a 2 decimales
     };
+
+    //Guardamos para consistencia de datos
+    await this.growtRepository.ratePeriodGrowt(response);
   }
 
   /**
-   * Formatea la fecha según el tipo de periodo.
+   * Formateamos la fecha según el tipo de periodo.
    */
   private formatFecha(fecha: Date, tipo: TipoPeriodo): string {
     switch (tipo) {
@@ -112,7 +115,7 @@ export class GrowthRateService {
 
     // Calcular diferencia en días
     const diferencia = differenceInCalendarDays(fechaActual, fechaAnterior);
-
+    console.log(diferencia);
     // Verificar si la diferencia es de exactamente un día
     return diferencia === 1;
   }

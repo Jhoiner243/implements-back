@@ -31,9 +31,6 @@ export class ClienteService {
   }
 
   async deleteClient(id_cliente: string): Promise<{ message: string }> {
-    const cliente = await this.clienteRepository.getClientByID(id_cliente);
-    if (!cliente) throw new AppError("Cliente no encontrado", 404);
-
     await this.clienteRepository.deleteClient(id_cliente);
     return { message: "Cliente eliminado exitosamente" };
   }

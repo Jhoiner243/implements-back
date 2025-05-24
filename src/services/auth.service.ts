@@ -147,7 +147,7 @@ export class AuthService {
     try {
       switch (type) {
         case "access_token":
-          return jwt.verify(token, CLERK_PUBLIC_KEY as string, options) as any;
+          return jwt.verify(token, CLERK_PUBLIC_KEY as string) as any;
         case "refresh_token":
           return jwt.verify(
             token,

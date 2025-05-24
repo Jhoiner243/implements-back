@@ -40,4 +40,18 @@ export class GananciasRepository implements IGanancias {
   async getProfit(): Promise<GananciasEntity[]> {
     return db.profitSummary.findMany();
   }
+
+  async getProfitForCron() {
+    const findFirstProfit = await db.profitSummary.findMany({
+      where: {
+        tipo_periodo: "Diario",
+      },
+      orderBy: {
+        id: "desc",
+      },
+      take: 2,
+    });
+    if (findFirstProfit === null) return;
+    return findFirstProfit;
+  }
 }

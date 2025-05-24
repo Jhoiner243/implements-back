@@ -1,6 +1,7 @@
 import { injectable } from "inversify";
 import { FacturasEntity } from "../entities/facturas.entity";
 import { db } from "../frameworks/db/db";
+import { ResultPeriodoRate } from "../services/growt-rate.service";
 import { Analytics } from "../ts/interfaces/analitics.interface";
 
 @injectable()
@@ -42,11 +43,21 @@ export class AnaliticsRepository implements Analytics {
   }
 
   async getAnaliticsProductos() {
-    const result = await db.productos.findMany({
+    return await db.productos.findMany({
       cacheStrategy: {
         ttl: 60,
       },
     });
-    return result;
+  }
+
+  async ratePeriodGrowt({ fechas, periodo, growthRate }: ResultPeriodoRate) {
+    await db.growtRate.create({
+      data: {
+        fechaActual: fechas.fechaActual,
+        fechaAnterior: fechas.fechaAnterior,
+        porcentaje: growthRate,
+        tipoPeriodo: periodo,
+      },
+    });
   }
 }
