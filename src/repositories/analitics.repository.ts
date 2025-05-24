@@ -50,6 +50,16 @@ export class AnaliticsRepository implements Analytics {
     });
   }
 
+  async getDataGrowtRate() {
+    return await db.growtRate.findFirst({
+      where: {
+        tipoPeriodo: "Diario",
+      },
+      orderBy: {
+        id: "desc",
+      },
+    });
+  }
   async ratePeriodGrowt({ fechas, periodo, growthRate }: ResultPeriodoRate) {
     await db.growtRate.create({
       data: {

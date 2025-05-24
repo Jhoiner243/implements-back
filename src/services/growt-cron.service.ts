@@ -12,7 +12,6 @@ export class AutomatedGrowthIndex {
   async cronAutomatedCall() {
     try {
       const diaActual = await this.profitSummary.getProfitForCron(); // Datos de hoy
-      console.log("Dia", diaActual);
       const mapData = (diaActual ?? []).map((data) => ({
         tipoPeriodo: data.tipo_periodo,
         fecha: data.createdAt,
@@ -36,8 +35,6 @@ export class AutomatedGrowthIndex {
 
         return resultado;
       }
-      console.log(diaActual);
-      console.log("No se encontró un día anterior válido");
       return null;
     } catch (err) {
       console.error("Error al crear growth rate:", err);
