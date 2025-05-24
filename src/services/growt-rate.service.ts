@@ -115,8 +115,13 @@ export class GrowthRateService {
 
     // Calcular diferencia en días
     const diferencia = differenceInCalendarDays(fechaActual, fechaAnterior);
-    console.log(diferencia);
     // Verificar si la diferencia es de exactamente un día
     return diferencia === 1;
+  }
+
+  // Obtenemos el ultimo dato agregado para retornalo en las peticiones
+  //------------------------------------------------------------------------
+  async getDataGrowtRate() {
+    return await this.growtRepository.getDataGrowtRate();
   }
 }
