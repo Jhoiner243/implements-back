@@ -6,7 +6,6 @@ import { GrowthRateService } from "./growt-rate.service";
 export class AutomatedGrowthIndex {
   constructor(
     @inject(GrowthRateService) private growtRateService: GrowthRateService,
-
     @inject(GananciasRepository) private profitSummary: GananciasRepository
   ) {}
 

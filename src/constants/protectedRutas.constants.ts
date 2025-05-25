@@ -11,7 +11,7 @@ export const protectedRoutes = [
   "/analitics/pedidos",
   "/analitics/clientes",
   "/analitics/productos",
-  "/growt-rate",
+  "/analitics/growt-rate",
 
   //Rutas de clientes
   "/clientes", // obtener todos los clientes y post
