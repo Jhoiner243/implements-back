@@ -58,7 +58,13 @@ export class FacturaRepository implements IFacturas {
       },
     });
   }
-
+  async getFacturaById(id: string) {
+    return await db.factura.findUnique({
+      where: {
+        id: id,
+      },
+    });
+  }
   async updateFact(id: string, data: Partial<FacturaSeccion>): Promise<void> {
     await db.factura.update({
       where: {

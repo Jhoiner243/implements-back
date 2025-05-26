@@ -68,6 +68,10 @@ export class FacturaService {
     }
   }
 
+  async getFacturaById(id: string) {
+    return this.facturaRepository.getFacturaById(id);
+  }
+
   async deleteFact(id: string): Promise<{ message: string }> {
     try {
       await this.facturaRepository.deleteFact(id);

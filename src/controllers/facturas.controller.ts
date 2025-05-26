@@ -58,6 +58,10 @@ export class FacturaController implements BaseController {
     return message;
   }
 
+  @Get("/factura/:id")
+  async getFacturaById(@Param("id") id: string) {
+    return this.facturaService.getFacturaById(id);
+  }
   @Delete("/facturas/:id")
   async deleteFact(@Res() res: Response, @Param("id") id: string) {
     try {
