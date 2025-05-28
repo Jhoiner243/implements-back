@@ -63,6 +63,30 @@ export class FacturaRepository implements IFacturas {
       where: {
         id: id,
       },
+      include: {
+        cliente: {
+          select: {
+            name: true,
+            email: true,
+            phone: true,
+            address: true,
+          },
+        },
+
+        detalles: {
+          include: {
+            producto: {
+              select: {
+                id: true,
+                nombre: true,
+              },
+            },
+          },
+        },
+      },
+      cacheStrategy: {
+        ttl: 60,
+      },
     });
   }
   async updateFact(id: string, data: Partial<FacturaSeccion>): Promise<void> {

@@ -5,7 +5,7 @@ export async function automatizedCron(
   automatizedCronGrowt: AutomatedGrowthIndex
 ) {
   const growt = cron.schedule(
-    "* * * * * *",
+    "* * * * *",
     async () => {
       await automatizedCronGrowt.cronAutomatedCall();
       growt.stop();
