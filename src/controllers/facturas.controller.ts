@@ -8,6 +8,7 @@ import {
   Param,
   Post,
   Put,
+  QueryParam,
   Res,
 } from "routing-controllers";
 import { ZodError } from "zod";
@@ -36,11 +37,18 @@ export class FacturaController implements BaseController {
     }
   }
   @Get("/facturas")
-  async getFact(@Res() res: Response) {
+  async getFact(
+    @QueryParam("page") page: string,
+    @QueryParam("limit") limit: string,
+    @Res() res: Response
+  ) {
     try {
-      const facturas = await this.facturaService.getFact();
-
-      return res.status(200).json(facturas);
+      const facturas = await this.facturaService.getFact({
+        limit: limit ? +limit : undefined,
+        page: page ? +page : undefined,
+      });
+      console.log(facturas);
+      return facturas;
     } catch (err) {
       if (err instanceof AppError) {
         return res.status(err.status).json({ message: err.message });

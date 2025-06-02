@@ -9,7 +9,7 @@ export class AutomatedGrowthIndex {
     @inject(GananciasRepository) private profitSummary: GananciasRepository
   ) {}
 
-  async cronAutomatedCall() {
+  async cronAutomatedCall(): Promise<void | null> {
     try {
       const diaActual = await this.profitSummary.getProfitForCron(); // Datos de hoy
       const mapData = (diaActual ?? []).map((data) => ({
@@ -19,7 +19,7 @@ export class AutomatedGrowthIndex {
       }));
 
       if (mapData[0] && mapData[1]) {
-        const resultado = await this.growtRateService.earningPeriod({
+        const resultado: void = await this.growtRateService.earningPeriod({
           data: {
             ganaciaTotalActual: {
               fecha: mapData[0].fecha,

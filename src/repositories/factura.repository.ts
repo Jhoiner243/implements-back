@@ -1,10 +1,12 @@
 import { injectable } from "inversify";
 import {
+  DetallesFacturasEntity,
   FacturaSeccion,
   FacturasEntity,
   StatusFactura,
 } from "../entities/facturas.entity";
 import { db } from "../frameworks/db/db";
+import { PanginationDto } from "../ts/dtos/paginationDto";
 import { IFacturas } from "../ts/interfaces/facturas.interface";
 import { emailFacts } from "../utils/helpers/email-facts";
 
@@ -14,11 +16,13 @@ export class FacturaRepository implements IFacturas {
     const faturaCreate = await db.factura.create({
       data: {
         detalles: {
-          create: (data.detalles ?? []).map((detalle) => ({
-            productoId: detalle.id_producto,
-            cantidad: detalle.cantidad,
-            precio: detalle.precio_venta,
-          })),
+          create: (data.detalles ?? []).map(
+            (detalle: DetallesFacturasEntity) => ({
+              productoId: detalle.id_producto,
+              cantidad: detalle.cantidad,
+              precio: detalle.precio_venta,
+            })
+          ),
         },
         clienteId: data.id_cliente,
         total: data.total,
@@ -35,8 +39,16 @@ export class FacturaRepository implements IFacturas {
     await emailFacts(faturaCreate.id);
   }
 
-  async getFact(): Promise<FacturaSeccion[]> {
+  async CountFact() {
+    return await db.factura.count();
+  }
+  async getFact({
+    page = 1,
+    limit = 10,
+  }: PanginationDto): Promise<FacturaSeccion[]> {
     const Facturas = await db.factura.findMany({
+      skip: (page - 1) * limit,
+      take: limit,
       include: { cliente: true },
     });
 

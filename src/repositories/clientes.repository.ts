@@ -1,5 +1,5 @@
 import { injectable } from "inversify";
-import { ClienteEntity } from "../entities/clientes.entity";
+import { clientCreate, ClienteEntity } from "../entities/clientes.entity";
 import { db } from "../frameworks/db/db";
 import { IClientes } from "../ts/interfaces/clientes.interface";
 
@@ -21,15 +21,16 @@ export class ClientesRepository implements IClientes {
 
     return { message: "Cliente agregado exitosamente" };
   }
-
+  async updateClient(id: string, data: Partial<clientCreate>) {
+    return db.clientes.update({
+      where: { id },
+      data: data,
+    });
+  }
   async getClientByID(id_cliente: string) {
-    const client = await db.clientes.delete({
+    return await db.clientes.findUnique({
       where: { id: id_cliente },
     });
-
-    if (!client) return null;
-
-    return client;
   }
 
   async getAllClient(): Promise<ClienteEntity[]> {

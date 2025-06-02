@@ -13,6 +13,7 @@ import {
 import { NotificationsService } from "../services/notifications.service";
 import { AppError } from "../utils/errors/app-errors";
 import { BaseController } from "./base.controller";
+import {GetNotificationsEntity} from "../repositories/notifications.repository";
 
 @JsonController()
 export class NotificationsController implements BaseController {
@@ -24,7 +25,7 @@ export class NotificationsController implements BaseController {
   @Get("/notifications")
   async getMulticastNotifications(@Res() res: Response) {
     try {
-      const response =
+      const response:GetNotificationsEntity[] =
         await this.notificationsService.getForMulicastNotifications();
       return res.status(200).json(response);
     } catch (error: any) {
@@ -35,7 +36,7 @@ export class NotificationsController implements BaseController {
   @Post("/notifications")
   async ActiveSendNotifications(@Req() req: Request, @Res() res: Response) {
     try {
-      const tokenJwt = req.cookies.jwt;
+      const tokenJwt:any = req.cookies.jwt;
       if (tokenJwt === undefined) {
         return res.status(401).json({ error: "Access token is missing" });
       }

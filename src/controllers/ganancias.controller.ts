@@ -4,6 +4,7 @@ import { Get, JsonController, Res } from "routing-controllers";
 import { GananciasServices } from "../services/profit.service";
 import { AppError } from "../utils/errors/app-errors";
 import { BaseController } from "./base.controller";
+import {GananciasEntity} from "../entities/ganacias.entity";
 
 @JsonController()
 export class GananciasController implements BaseController {
@@ -14,7 +15,7 @@ export class GananciasController implements BaseController {
   @Get("/profit")
   async getProfit(@Res() res: Response) {
     try {
-      const profit = await this.gananciasService.getProfit();
+      const profit:GananciasEntity[] = await this.gananciasService.getProfit();
       return res.status(200).json(profit);
     } catch (error) {
       if (error instanceof AppError) {
