@@ -63,6 +63,29 @@ export class FacturaRepository implements IFacturas {
     }));
   }
 
+  async getStatus({
+    page = 1,
+    limit = 10,
+    status,
+  }: PanginationDto): Promise<FacturaSeccion[]> {
+    const Facturas = await db.factura.findMany({
+      skip: (page - 1) * limit,
+      where: { status },
+      take: limit,
+      include: { cliente: true },
+    });
+
+    return Facturas.map((factura) => ({
+      id: factura.id,
+      id_cliente: factura.cliente?.name ?? "Unknown",
+      total: factura.total,
+      detalles: [],
+      status: factura.status as StatusFactura,
+      createdAt: factura.createdAt,
+      updatedAt: factura.updatedAt,
+    }));
+  }
+
   async deleteFact(id: string): Promise<void> {
     await db.detalleFactura.delete({
       where: {

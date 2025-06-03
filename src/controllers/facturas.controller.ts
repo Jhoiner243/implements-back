@@ -1,3 +1,4 @@
+import { StatusFactura } from "@prisma/client";
 import { Response } from "express";
 import { inject } from "inversify";
 import {
@@ -47,7 +48,6 @@ export class FacturaController implements BaseController {
         limit: limit ? +limit : undefined,
         page: page ? +page : undefined,
       });
-      console.log(facturas);
       return facturas;
     } catch (err) {
       if (err instanceof AppError) {
@@ -56,6 +56,29 @@ export class FacturaController implements BaseController {
       return res.status(500).json("Error de de sevidor interno");
     }
   }
+
+  @Get("/factura/with-status")
+  async getStatus(
+    @QueryParam("page") page: string,
+    @QueryParam("limit") limit: string,
+    @QueryParam("status") status: string,
+    @Res() res: Response
+  ) {
+    try {
+      const facturas = await this.facturaService.getFacturaWithStatus({
+        status: status as StatusFactura,
+        limit: limit ? +limit : undefined,
+        page: page ? +page : undefined,
+      });
+      return facturas;
+    } catch (err) {
+      if (err instanceof AppError) {
+        return res.status(err.status).json({ message: err.message });
+      }
+      return res.status(500).json("Error de de sevidor interno");
+    }
+  }
+
   @Put("/facturas/:id")
   async putFact(
     @Body() data: Partial<FacturaSeccion>,
@@ -69,7 +92,6 @@ export class FacturaController implements BaseController {
   @Get("/factura/:id")
   async getFacturaById(@Param("id") id: string) {
     const response = await this.facturaService.getFacturaById(id);
-    console.log(response);
     return response;
   }
   @Delete("/facturas/:id")

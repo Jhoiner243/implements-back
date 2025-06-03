@@ -48,7 +48,6 @@ export class ClienteController implements BaseController {
   ) {
     try {
       const cliente = await this.clienteService.getClientByID(id_cliente);
-      console.log(cliente);
       return cliente;
     } catch (err) {
       if (err instanceof AppError)
@@ -88,7 +87,6 @@ export class ClienteController implements BaseController {
   async getAllClient(@Res() res: Response) {
     try {
       const clientes = await this.clienteService.getAllClient();
-      console.log(clientes);
       return res.status(200).json(clientes);
     } catch {
       return res.status(500).json("Error de servidor interno");
