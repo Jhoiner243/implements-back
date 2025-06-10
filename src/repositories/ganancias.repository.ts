@@ -38,7 +38,12 @@ export class GananciasRepository implements IGanancias {
     });
   }
   async getProfit(): Promise<GananciasEntity[]> {
-    return db.profitSummary.findMany();
+    return db.profitSummary.findMany({
+      orderBy: {
+        id: "desc",
+      },
+      take: 7,
+    });
   }
 
   async getProfitLast() {

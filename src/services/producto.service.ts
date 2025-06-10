@@ -8,6 +8,7 @@ import { ProductoRepository } from "../repositories/producto.repository";
 import {
   CategorySchema,
   ProductoSchema,
+  ProductoUpdateSchema,
 } from "../ts/validations/producto.validations";
 import { AppError } from "../utils/errors/app-errors";
 
@@ -38,14 +39,33 @@ export class ProductoService {
     data: Partial<ProductoEntity>;
     id: string;
   }) {
+    console.log("Precio_compra", data.precio_compra);
+    // Transformamos los campos numéricos si vienen como string
+    const parsedData = {
+      ...data,
+      precio_compra:
+        data.precio_compra !== undefined
+          ? Number(data.precio_compra)
+          : undefined,
+      stock: data.stock !== undefined ? Number(data.stock) : undefined,
+    };
+
+    // Validamos los datos con Zod (ProductoUpdateSchema)
+    const dataValid = ProductoUpdateSchema.parse(parsedData);
+
+    // Actualizamos los datos en la base de datos
     const productUpdate = await this.productoRepository.updateProducto(
       id,
-      data
+      dataValid
     );
-    if (!productUpdate)
+
+    if (!productUpdate) {
       throw new AppError("No se pudo actualizar el producto", 404);
+    }
+
     return { message: "Producto actualizado exitosamente" };
   }
+
   async getAllProducto(): Promise<ProductoSeccion[]> {
     const productos = await this.productoRepository.getAllProducto();
     if (!productos || productos.length === 0)

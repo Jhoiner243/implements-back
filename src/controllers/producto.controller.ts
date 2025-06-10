@@ -67,10 +67,14 @@ export class ProductoController implements BaseController {
     @Param("id") id: string,
     @Body() data: Partial<ProductoEntity>
   ) {
+    console.log("DATA RECEVID", data);
+    console.log("DATA TRANSFORM", Number(data.precio_compra));
+
     const { message } = await this.productoService.updateProduct({
       data: data,
       id: id,
     });
+
     return message;
   }
   @Get("/category")
