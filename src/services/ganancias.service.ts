@@ -3,13 +3,15 @@ import { inject, injectable } from "inversify";
 import { GananciasEntity } from "../entities/ganacias.entity";
 import { db } from "../frameworks/db/db";
 import { GananciasRepository } from "../repositories/ganancias.repository";
+import { ProductoRepository } from "../repositories/producto.repository";
 import { AppError } from "../utils/errors/app-errors";
 
 @injectable()
 export class GananciasService {
   constructor(
     @inject(GananciasRepository)
-    private gananciasRepository: GananciasRepository
+    private gananciasRepository: GananciasRepository,
+    @inject(ProductoRepository) private productoRepository: ProductoRepository
   ) {}
 
   async calculateProfit({
@@ -25,33 +27,39 @@ export class GananciasService {
       );
       const endDate = new Date();
 
-      // Obtener todas las facturas con detalles
+      // Obtener facturas del periodo con sus detalles
       const facturas = await db.factura.findMany({
         include: { detalles: true },
       });
 
-      // Obtener todos los productos de una sola vez para evitar múltiples consultas
-      const productos = await db.productos.findMany();
-      if (productos[0].precio_compra === null) return;
+      if (!facturas.length) return;
+
+      // Obtener todos los productos disponibles
+      const productos = await db.productos.findMany({
+        where: { avaliable: true },
+      });
+
+      // Crear un mapa de productoId => precio_compra
       const productMap = new Map(
-        productos.map((producto) => [producto.id, producto.precio_compra])
+        productos.map((producto) => [
+          producto.id,
+          Number(producto.precio_compra),
+        ])
       );
 
-      // Calcular ganancia total
       let gananciaTotal = 0;
+
       for (const factura of facturas) {
         for (const detalle of factura.detalles) {
-          if (detalle.productoId === null) return;
-          const precioCompra = Number(productMap.get(detalle.productoId) ?? 0);
+          const precioCompra = productMap.get(detalle.productoId ?? "");
           if (precioCompra !== undefined) {
-            const precioCompraSeguro = precioCompra ?? 0;
-            gananciaTotal +=
-              (detalle.precio - precioCompraSeguro) * detalle.cantidad;
+            const ganancia = (detalle.precio - precioCompra) * detalle.cantidad;
+            gananciaTotal += ganancia;
           }
         }
       }
 
-      // Guardar ganancias en la base de datos
+      // Guardar ganancia en la base de datos
       await this.gananciasRepository.createProfit(
         startDate,
         endDate,

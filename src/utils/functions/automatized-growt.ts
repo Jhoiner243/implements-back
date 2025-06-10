@@ -5,10 +5,22 @@ export async function automatizedCron(
   automatizedCronGrowt: AutomatedGrowthIndex
 ) {
   const growt = cron.schedule(
-    "* * * * *",
+    "* * * * * *",
     async () => {
       await automatizedCronGrowt.cronAutomatedCall();
       growt.stop();
+    },
+    {
+      timezone: "America/Bogota",
+    }
+  );
+
+  const messaging = cron.schedule(
+    "* * * * * *",
+    async () => {
+      await automatizedCronGrowt.messagingProfitTotal();
+      console.log("Se usa");
+      messaging.stop();
     },
     {
       timezone: "America/Bogota",

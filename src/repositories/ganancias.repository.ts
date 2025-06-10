@@ -41,13 +41,23 @@ export class GananciasRepository implements IGanancias {
     return db.profitSummary.findMany();
   }
 
+  async getProfitLast() {
+    return db.profitSummary.findMany({
+      select: {
+        createdAt: true,
+        ganancia_total: true,
+      },
+      orderBy: { id: "asc" },
+      take: 1,
+    });
+  }
   async getProfitForCron() {
     const findFirstProfit = await db.profitSummary.findMany({
       where: {
         tipo_periodo: "Diario",
       },
       orderBy: {
-        id: "desc",
+        id: "asc",
       },
       take: 2,
     });

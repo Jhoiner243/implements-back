@@ -5,7 +5,6 @@ import {
 } from "../entities/producto.entity";
 import { db } from "../frameworks/db/db";
 import { IProductos } from "../ts/interfaces/producto.interface";
-import { AppError } from "../utils/errors/app-errors";
 
 export class ProductoRepository implements IProductos {
   async addProducto(
@@ -24,13 +23,20 @@ export class ProductoRepository implements IProductos {
 
   async getAllProducto(): Promise<ProductoSeccion[]> {
     const productos = await db.productos.findMany({
+      where: {
+        avaliable: true,
+      },
       include: { category: true },
+      cacheStrategy: {
+        ttl: 300,
+        swr: 600,
+        tags: ["catalog_products"],
+      },
     });
 
-    if (!productos || productos.length === 0)
-      throw new AppError("No hay productos registrados", 404);
     return productos.map((producto) => ({
       id: producto.id,
+      idProducto: producto.idProducto,
       nombre: producto.nombre,
       precio_compra: producto.precio_compra,
       stock: producto.stock,
@@ -40,8 +46,11 @@ export class ProductoRepository implements IProductos {
   }
 
   async deleteProducto(id_producto: string): Promise<void> {
-    await db.productos.delete({
+    await db.$accelerate.invalidate({ tags: ["catalog_products"] });
+
+    await db.productos.update({
       where: { id: id_producto },
+      data: { avaliable: false },
     });
   }
 
@@ -64,6 +73,8 @@ export class ProductoRepository implements IProductos {
     id_producto: string,
     data: Partial<ProductoEntity>
   ): Promise<{ message: string }> {
+    await db.$accelerate.invalidate({ tags: ["catalog_products"] });
+
     await db.productos.update({
       where: { id: id_producto },
       data: {
@@ -77,7 +88,7 @@ export class ProductoRepository implements IProductos {
   }
   async getById(id_producto: string): Promise<ProductoEntity | null> {
     const producto = await db.productos.findUnique({
-      where: { id: id_producto },
+      where: { id: id_producto, avaliable: true },
     });
     return producto;
   }

@@ -1,6 +1,7 @@
 import { inject, injectable } from "inversify";
 import { FacturaSeccion, FacturasEntity } from "../entities/facturas.entity";
 import { FacturaRepository } from "../repositories/factura.repository";
+import { PanginationDto } from "../ts/dtos/paginationDto";
 import { FacturasEntitySchema } from "../ts/validations/factura.validations";
 import { AppError } from "../utils/errors/app-errors";
 import { DiaryProfit } from "./diary-profit.service";
@@ -54,11 +55,25 @@ export class FacturaService {
     }
   }
 
-  async getFact(): Promise<FacturaSeccion[]> {
+  async getFact({ limit = 10, page = 1, status }: PanginationDto): Promise<{
+    facturas: FacturaSeccion[];
+    lastPages: number;
+    totalFact: number;
+  }> {
     try {
-      const facturas = await this.facturaRepository.getFact();
+      const facturas = await this.facturaRepository.getFact({
+        status,
+        limit: limit,
+        page,
+      });
+      const totalFact = await this.facturaRepository.CountFact();
+      const lastPage = Math.ceil(totalFact / limit);
 
-      return facturas;
+      return {
+        facturas,
+        totalFact: totalFact,
+        lastPages: lastPage,
+      };
     } catch (err) {
       if (err) {
         throw AppError.error("Error al enviar facturas", 500);
@@ -68,6 +83,37 @@ export class FacturaService {
     }
   }
 
+  async getFacturaWithStatus({
+    limit = 10,
+    page = 1,
+    status,
+  }: PanginationDto): Promise<{
+    facturas: FacturaSeccion[];
+    lastPages: number;
+    totalFact: number;
+  }> {
+    try {
+      const facturas = await this.facturaRepository.getStatus({
+        status,
+        limit: limit,
+        page,
+      });
+      const totalFact = await this.facturaRepository.CountFact();
+      const lastPage = Math.ceil(totalFact / limit);
+
+      return {
+        facturas,
+        totalFact: totalFact,
+        lastPages: lastPage,
+      };
+    } catch (err) {
+      if (err) {
+        throw AppError.error("Error al enviar facturas", 500);
+      } else {
+        throw err;
+      }
+    }
+  }
   async getFacturaById(id: string) {
     return this.facturaRepository.getFacturaById(id);
   }

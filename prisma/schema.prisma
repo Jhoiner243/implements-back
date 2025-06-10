@@ -9,42 +9,45 @@ datasource db {
 
 model User {
   id            String             @id @default(uuid())
+  clerkId       String             @unique 
   email         String             @unique
-  token         String?
-  username      String             @unique
   name          String
   lastname      String
-  password      String
+  token         String?          
   favoritos     ProductFavorite[]
   prompts       AiQuery[]
   notifications Notification[]
-  is_verified   Boolean            @default(false)
-  verified_at   DateTime
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
 }
 
+
 model Clientes {
   id         String    @id @default(uuid())
+  idCliente  Int               @default(autoincrement())
   pedidos    Factura[]
   name       String
   email      String
   phone      String
   address    String
+  updatedAt DateTime  @updatedAt
   createdAt  DateTime  @default(now())
 
 }
 
 model Factura {
   id          String           @id @default(uuid())
+  idFactura  Int              @default(autoincrement())
   clienteId   String           @map("id_cliente")
-  cliente     Clientes         @relation(fields: [clienteId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  cliente     Clientes         @relation(fields: [clienteId], references: [id], onUpdate: Cascade)
   detalles    DetalleFactura[]
   emailLogs   EmailLog[]       @relation("FacturaEmailLogs")
   status      StatusFactura    @default(Pendiente)
   total       Float
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
+
+  @@index([status])
 }
 
 model DetalleFactura {
@@ -52,7 +55,7 @@ model DetalleFactura {
   facturaId   String
   factura     Factura    @relation(fields: [facturaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   productoId  String
-  producto    Productos  @relation(fields: [productoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  producto    Productos  @relation(fields: [productoId], references: [id], onUpdate: Cascade)
   cantidad    Int
   precio      Float
   createdAt   DateTime   @default(now())
@@ -61,13 +64,15 @@ model DetalleFactura {
 
 model Productos {
   id                 String            @id @default(uuid())
+  idProducto         Int               @default(autoincrement())
   nombre             String
   precio_compra      Float
   stock              Int               @default(0)
   favoritosProducto  ProductFavorite[]
   detalles           DetalleFactura[]
   categoryId         String
-  category           Category          @relation(fields: [categoryId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  avaliable          Boolean @default(true)
+  category           Category          @relation(fields: [categoryId], references: [id], onUpdate: Cascade)
   stockHistory       StockHistory[]
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
@@ -75,6 +80,7 @@ model Productos {
 
 model Category {
   id         String      @id @default(uuid())
+  idCategory Int @default(autoincrement())
   name       String
   products   Productos[]
   createdAt  DateTime    @default(now())
@@ -86,7 +92,7 @@ model ProductFavorite {
   userId     String
   user       User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   productId  String
-  product    Productos   @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  product    Productos   @relation(fields: [productId], references: [id], onUpdate: Cascade)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
 }
@@ -103,7 +109,7 @@ model AiQuery {
 model Notification {
   id         String     @id @default(uuid())
   userId     String
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onUpdate: Cascade)
   message    String
   is_read    Boolean    @default(false)
   createdAt  DateTime   @default(now())
@@ -121,7 +127,7 @@ model Token {
 model StockHistory {
   id          String     @id @default(uuid())
   productoId  String
-  producto    Productos  @relation(fields: [productoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  producto    Productos  @relation(fields: [productoId], references: [id], onUpdate: Cascade)
   cantidad    Int
   motivo      String?
   createdAt   DateTime   @default(now())

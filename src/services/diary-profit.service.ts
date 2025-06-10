@@ -37,9 +37,9 @@ export class DiaryProfit {
 
     // 4. Buscar si ya existe registro para la misma fecha (solo día/mes/año)
     const mismaFecha = (d1: Date, d2: Date) =>
-      d1.getUTCFullYear() === d2.getUTCFullYear() &&
-      d1.getUTCMonth() === d2.getUTCMonth() &&
-      d1.getUTCDate() === d2.getUTCDate();
+      d1.getFullYear() === d2.getFullYear() &&
+      d1.getMonth() === d2.getMonth() &&
+      d1.getDate() === d2.getDate();
 
     const registroExistente = registros.find((r) =>
       mismaFecha(r.createdAt, fecha)

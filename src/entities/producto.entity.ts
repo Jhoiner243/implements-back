@@ -1,15 +1,16 @@
 export interface ProductoEntity {
   id: string;
+  idProducto: number;
   nombre: string;
   precio_compra: number;
   stock: number;
   categoryId: string;
 }
 export interface ProductoSeccion extends ProductoEntity {
-  categoryName: string
+  categoryName: string;
 }
 
-export interface CategoryEntity{
+export interface CategoryEntity {
   id: string;
   name: string;
 }

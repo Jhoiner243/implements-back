@@ -1,100 +1,48 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import bcrypt from "bcryptjs";
+import ClerkClient from "@clerk/backend";
 import { inject, injectable } from "inversify";
 import jwt from "jsonwebtoken";
-import { CLERK_PUBLIC_KEY, CLERK_SECRET_KEY } from "../config/auth.config";
+import {
+  CLERK_PUBLIC_KEY,
+  CLERK_PUBLISHABLE_KEY,
+  CLERK_SECRET_KEY,
+} from "../config/auth.config";
 import { AuthRepository } from "../repositories/auth.repository";
-import { LoginDTO } from "../ts/dtos/LoginDTO";
 import { RegisterDTO } from "../ts/dtos/RegisterDTO";
 import { IJwtPayload } from "../ts/types/IJwtPayload";
 import { Token } from "../ts/types/Token";
 import { TokenInfo } from "../ts/types/TokenInfo";
-import { schemaLogin } from "../ts/validations/login.validations";
-import { schemaRegister } from "../ts/validations/register.validations";
 import { AppError } from "../utils/errors/app-errors";
 
 @injectable()
 export class AuthService {
   constructor(@inject(AuthRepository) private authRepository: AuthRepository) {}
 
-  async registerUser(
-    data: RegisterDTO
-  ): Promise<{ message: string; token: string | undefined }> {
-    const userValidate = schemaRegister.parse(data);
+  private async clientClerk(userId: string) {
+    // Obtener el usuario desde Clerk
+    const clerkClient = ClerkClient.createClerkClient({
+      secretKey: CLERK_SECRET_KEY,
+      publishableKey: CLERK_PUBLISHABLE_KEY,
+    });
 
+    return clerkClient.users.getUser(userId);
+  }
+
+  async registerUser({ data }: { data: RegisterDTO }) {
+    // Verificar si el usuario ya está en la base de datos
     const { message } = await this.authRepository.authenticateUser(
-      userValidate.user_email
+      data.user_clerkId
     );
-
     if (message === true) throw new AppError("User already exists", 400);
 
-    const hashedPassword = await bcrypt.hash(userValidate.user_password, 10);
-
+    // Registrar el usuario en tu base de datos
     const user = await this.authRepository.registerUser({
-      ...userValidate,
-      user_password: hashedPassword,
+      user_clerkId: data.user_clerkId,
+      user_email: data.user_email,
+      user_name: data.user_name,
+      user_lastname: data.user_lastname,
     });
-
-    const token = await this.generateAccessToken("access_token", {
-      user_id: user.userId,
-      user_name: userValidate.user_name,
-    });
-
     if (!user) throw new AppError("Error creating user", 500);
-    if (!token) throw new AppError("Error creating token", 500);
-
-    return { message: "User created", token };
-  }
-
-  async loginUser(
-    data: LoginDTO
-  ): Promise<{ message: string; accessToken: string; refreshToken: string }> {
-    const userValidate = schemaLogin.parse(data);
-
-    const userCompare = await this.authRepository.findByEmail(
-      userValidate.user_email
-    );
-
-    if (!userCompare) throw new AppError("The email user not exists", 400);
-
-    const isPasswordValid = await bcrypt.compare(
-      userValidate.user_password,
-      userCompare.password
-    );
-
-    if (!isPasswordValid) {
-      throw new AppError("Invalid credentials", 401);
-    }
-
-    const tokeInfo = {
-      user_id: userCompare.id,
-      user_name: userCompare.name,
-    };
-
-    const accessToken = await this.generateAccessToken(
-      "access_token",
-      tokeInfo
-    );
-    const refreshToken = await this.generateAccessToken(
-      "refresh_token",
-      tokeInfo
-    );
-
-    await this.authRepository.loginUser({
-      user_email: userCompare.email,
-      user_password: userCompare.password,
-    });
-
-    if (accessToken === undefined || refreshToken === undefined) {
-      throw new AppError("Error creating token", 500);
-    }
-    return { message: "User logged in", accessToken, refreshToken };
-  }
-
-  async logoutUser(refresh_token: string): Promise<{ message: string }> {
-    if (!refresh_token) throw new AppError("No active session", 403);
-
-    return { message: "User logout" };
   }
 
   private async generateAccessToken(type: Token, tokenInf: TokenInfo) {
@@ -162,5 +110,9 @@ export class AuthService {
     } catch {
       return null;
     }
+  }
+
+  async deleteAccount(userId: string) {
+    await this.authRepository.deleteAccount(userId);
   }
 }

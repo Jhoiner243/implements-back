@@ -13,6 +13,10 @@ import { emailFacts } from "../utils/helpers/email-facts";
 @injectable()
 export class FacturaRepository implements IFacturas {
   async dataFact(data: FacturasEntity): Promise<void> {
+    //Invalidamos la cache
+    await db.$accelerate.invalidate({ tags: ["today_invoices"] });
+
+    //creamos la factura
     const faturaCreate = await db.factura.create({
       data: {
         detalles: {
@@ -47,6 +51,8 @@ export class FacturaRepository implements IFacturas {
     limit = 10,
   }: PanginationDto): Promise<FacturaSeccion[]> {
     const Facturas = await db.factura.findMany({
+      orderBy: { createdAt: "desc" },
+      cacheStrategy: { ttl: 60, tags: ["today_invoices"] },
       skip: (page - 1) * limit,
       take: limit,
       include: { cliente: true },
@@ -54,7 +60,8 @@ export class FacturaRepository implements IFacturas {
 
     return Facturas.map((factura) => ({
       id: factura.id,
-      id_cliente: factura.cliente?.name ?? "Unknown",
+      idFactura: factura.idFactura,
+      id_cliente: factura.cliente.name,
       total: factura.total,
       detalles: [],
       status: factura.status as StatusFactura,
@@ -77,6 +84,7 @@ export class FacturaRepository implements IFacturas {
 
     return Facturas.map((factura) => ({
       id: factura.id,
+      idFactura: factura.idFactura,
       id_cliente: factura.cliente?.name ?? "Unknown",
       total: factura.total,
       detalles: [],

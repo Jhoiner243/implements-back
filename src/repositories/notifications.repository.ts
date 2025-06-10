@@ -5,6 +5,7 @@ import { INotifications } from "../ts/interfaces/notifications.interface";
 
 export interface GetNotificationsEntity {
   message: string;
+  createdAt: Date;
   is_read: boolean;
 }
 @injectable()
@@ -22,13 +23,16 @@ export class NotificationsRepository implements INotifications {
       },
     });
   }
-  async activeNotifications(
-    token: string,
-    id: string
-  ): Promise<{ message: string }> {
+  async activeNotifications({
+    token,
+    id,
+  }: {
+    token: string;
+    id: string;
+  }): Promise<{ message: string }> {
     await db.user.update({
       where: {
-        id: id,
+        clerkId: id,
       },
       data: {
         token: token,

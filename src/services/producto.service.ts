@@ -18,7 +18,7 @@ export class ProductoService {
   ) {}
 
   async addProducto(
-    data: Omit<ProductoEntity, "id">
+    data: Omit<ProductoEntity, "id" | "idProducto">
   ): Promise<{ message: string }> {
     const productValidations = ProductoSchema.safeParse(data);
 
@@ -26,7 +26,7 @@ export class ProductoService {
       throw new AppError("Datos de producto inválidos", 400);
     }
     const { message } = await this.productoRepository.addProducto(
-      productValidations.data
+      productValidations.data as Omit<ProductoEntity, "id">
     );
 
     return { message };

@@ -6,13 +6,13 @@ import { JwtAuth } from "../jwt";
 
 @Middleware({ type: "before" })
 export class AuthGuard {
-  async use(req: Request, res: Response, next: NextFunction) {
-    const isProtected = isProtectedRoutes(req.path);
+  async use(req: Request, res: Response, next: NextFunction): Promise<void> {
+    const isProtected: boolean = isProtectedRoutes(req.path);
 
     if (!isProtected) {
       return next();
     }
-    const jwtAuth = appContainer.get(JwtAuth);
+    const jwtAuth:JwtAuth = appContainer.get(JwtAuth);
     await jwtAuth.authenticate(req, res, next);
   }
 }

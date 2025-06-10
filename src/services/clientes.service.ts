@@ -1,7 +1,10 @@
 import { inject, injectable } from "inversify";
-import { ClienteEntity } from "../entities/clientes.entity";
+import { clientCreate, ClienteEntity } from "../entities/clientes.entity";
 import { ClientesRepository } from "../repositories/clientes.repository";
-import { ClienteSchema } from "../ts/validations/clientes.validations";
+import {
+  ClienteSchema,
+  ClienteUpdateSchema,
+} from "../ts/validations/clientes.validations";
 import { AppError } from "../utils/errors/app-errors";
 
 @injectable()
@@ -33,6 +36,18 @@ export class ClienteService {
   async deleteClient(id_cliente: string): Promise<{ message: string }> {
     await this.clienteRepository.deleteClient(id_cliente);
     return { message: "Cliente eliminado exitosamente" };
+  }
+
+  async clienteUpdate(
+    id: string,
+    data: Partial<clientCreate>
+  ): Promise<{ message: string }> {
+    const datosValidate = ClienteUpdateSchema.parse(data);
+
+    if (!datosValidate) return { message: "Datos no validos" };
+
+    await this.clienteRepository.updateClient(id, datosValidate);
+    return { message: "¡Datos actualizados!" };
   }
 
   async getAllClient(): Promise<ClienteEntity[]> {

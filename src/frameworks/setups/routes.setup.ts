@@ -14,7 +14,7 @@ import { ProductoController } from "../../controllers/producto.controller";
 dotenv.config();
 
 const corsOptions: CorsOptions = {
-  origin: process.env.URL_PORT_FRONTEND, // Asegúrate de que este sea el origen correcto
+  origin: process.env.URL_PORT_FRONTEND,
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
   allowedHeaders: [

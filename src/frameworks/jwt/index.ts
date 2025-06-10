@@ -17,6 +17,7 @@ export class JwtAuth {
       res.status(401).json({ error: "Not signed in" });
       return;
     }
+
     const isValid = this.authService.verifyToken(
       "access_token",
       tokenCrossOrigin ?? ""

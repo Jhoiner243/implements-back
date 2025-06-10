@@ -6,94 +6,116 @@ import { RegisterDTO } from "../ts/dtos/RegisterDTO";
 import { IAuth } from "../ts/interfaces/auth.interface";
 
 @injectable()
-export class AuthRepository implements IAuth{
-
-  async registerUser(user: RegisterDTO): Promise<{message: string, userId: string}> {
+export class AuthRepository implements IAuth {
+  async registerUser(
+    user: RegisterDTO
+  ): Promise<{ message: string; userId: string }> {
     const registerUser = await db.user.create({
       data: {
         name: user.user_name,
-        username: user.user_username,
         lastname: user.user_lastname,
         email: user.user_email,
-        password: user.user_password,
-        verified_at: new Date()
-      }
-    })
+        clerkId: user.user_clerkId, // Make sure RegisterDTO has user_clerkId
+      },
+    });
 
     if (!registerUser) {
       throw new Error("Error registering user");
     }
-    return {message: "User registered", userId: registerUser.id};
+    return { message: "User registered", userId: registerUser.id };
   }
-  async loginUser(user: LoginDTO): Promise<{message: string}> {
+  async loginUser(user: LoginDTO): Promise<{ message: string }> {
     const loginUser = await db.user.findFirst({
       where: {
         email: user.user_email,
-        password: user.user_password
-      }
-    })
+      },
+    });
     if (!loginUser) {
       throw new Error("Error logging in user");
     }
-    return {message: "User logged in"};
+    return { message: "User logged in" };
   }
 
-  async authenticateUser(user_email: string): Promise<{message: boolean}>{
+  async authenticateUser(userId: string): Promise<{ message: boolean }> {
     const userExiste = await db.user.findUnique({
       where: {
-        email: user_email,
-      }
-    })
+        clerkId: userId,
+      },
+    });
     if (userExiste) {
-      return {message: true};
+      return { message: true };
     }
 
-    return {message: false};
+    return { message: false };
   }
 
-	async findById(usr_id: string): Promise<UserEntity | null> {
-		const user = await db.user.findUnique({
+  async findById(usr_id: string): Promise<UserEntity | null> {
+    const user = await db.user.findUnique({
       where: {
-      id: usr_id}
+        id: usr_id,
+      },
     });
 
-    if(user){
+    if (user) {
       return {
         id: user.id,
         email: user.email,
-        token: user.token || '',
-        username: user.username,
+        token: user.token || "",
         name: user.name,
         lastname: user.lastname,
-        password: user.password,
-        is_verified: user.is_verified,
-        created_at: user.createdAt,
-        updated_at: user.updatedAt,
-      }
+      };
     }
-		return null;
-	}
+    return null;
+  }
 
   async findByEmail(email: string): Promise<UserEntity | null> {
-		const user = await db.user.findUnique({
+    const user = await db.user.findUnique({
       where: {
-      email: email}
+        email: email,
+      },
     });
 
-    if(user){
+    if (user) {
       return {
         id: user.id,
         email: user.email,
-        token: user.token || '',
-        username: user.username,
+        token: user.token || "",
         name: user.name,
         lastname: user.lastname,
-        password: user.password,
-        is_verified: user.is_verified,
-        created_at: user.createdAt,
-        updated_at: user.updatedAt,
-      }
+      };
     }
-		return null;
-	}
+    return null;
+  }
+
+  async usersToken() {
+    return db.user.findMany({
+      select: {
+        id: true,
+        token: true,
+      },
+      where: {
+        token: {
+          not: null,
+        },
+      },
+      orderBy: {
+        token: "asc",
+      },
+    });
+  }
+
+  async deleteAccount(userId: string) {
+    await db.notification.deleteMany({
+      where: {
+        user: {
+          clerkId: userId,
+        },
+      },
+    });
+    await db.user.delete({
+      where: {
+        clerkId: userId,
+      },
+    });
+  }
 }

@@ -1,69 +1,52 @@
 import { Request, Response } from "express";
 import { inject } from "inversify";
-import { Body, JsonController, Post, Req, Res } from "routing-controllers";
-import { cookieOptions } from "../constants/cookieOptions.constants";
+import { Delete, JsonController, Post, Req, Res } from "routing-controllers";
 import { AuthService } from "../services/auth.service";
-import { LoginDTO } from "../ts/dtos/LoginDTO";
-import { RegisterDTO } from "../ts/dtos/RegisterDTO";
 import { AppError } from "../utils/errors/app-errors";
 
 @JsonController()
-export class AuthController{
+export class AuthController {
   constructor(@inject(AuthService) private authService: AuthService) {}
 
+  //Obtenemos los datos del usuario cuando se registre o inicie sesion por primera vez
   @Post("/register")
-  async registerUser(@Res() res: Response,@Body() data: RegisterDTO) {
+  async registerUser(@Req() req: Request, @Res() res: Response) {
     try {
-      const { message, token } = await this.authService.registerUser(data);
+      const event = req.body;
+      const {
+        data: { first_name, last_name, id, email_addresses },
+      } = event;
 
-      res.cookie("jwt", token)
-      return res.status(200).json({message})
-    } catch(error){
+      if (event === null) return;
+      if (event.type === "user.created") {
+        await this.authService.registerUser({
+          data: {
+            user_clerkId: id,
+            user_email: email_addresses[0].email_address,
+            user_lastname: last_name,
+            user_name: first_name,
+          },
+        });
+      }
+    } catch (error) {
       console.error("Error en registerUser:", error);
 
-      if(error instanceof AppError){
-        return res.status(error.status).json({message: error.message});
-      }
-      return res.status(500).json({message: "Error de servidor interno"});
-    }
-    
-  }
-
-  @Post("/login")
-  async loginUser(@Res() res: Response ,@Body() data: LoginDTO) {
-    try {
-      const { message, accessToken, refreshToken } = await this.authService.loginUser(data);
-
-      // Guardamos el token en una cookie
-      res.cookie("jwt", refreshToken, cookieOptions)
-      // retornamos la respuesta directamente
-      return res.status(200).json({
-        message, accessToken})
-    } catch (error) {
       if (error instanceof AppError) {
-        throw error;
+        return res.status(error.status).json({ message: error.message });
       }
-      throw new AppError("Error de servidor interno", 500);
+      return res.status(500).json({ message: "Error de servidor interno" });
     }
   }
 
-  @Post("/logout")
-  async logoutUser(@Res() res: Response, @Req() req: Request) {
-    try {
-      const token = req.cookies.jwt
-      const { message } = await this.authService.logoutUser(token);
+  // Cuando un usuario elimine su cuenta debe tener se obtiene el userId para eliminarlo de nuestra base de datos
+  @Delete("/delete-account")
+  async deleteAccount(@Req() req: Request) {
+    const {
+      data: { id },
+    } = req.body;
 
-      res.clearCookie("jwt", cookieOptions)
+    if (!id) return;
 
-      // retornamos la respuesta directamente
-      return {
-        message,
-      };
-    } catch (error) {
-      if (error instanceof AppError) {
-        throw error;
-      }
-      throw new AppError("Error de servidor interno", 500);
-    }
+    await this.authService.deleteAccount(id);
   }
 }

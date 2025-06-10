@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { inject, injectable } from "inversify";
 import jwt from "jsonwebtoken";
-import { REFRESH_TOKEN_SECRET } from "../config/auth.config";
+import { CLERK_PUBLIC_KEY } from "../config/auth.config";
 import { NotificationsEntity } from "../entities/notifications.entity";
 import { db } from "../frameworks/db/db";
 import messaging from "../frameworks/firabase-admin/admin.sdk";
@@ -21,14 +21,13 @@ export class NotificationsService {
     token: string,
     token_jwt: string
   ): Promise<{ message: string }> {
-    const idDecoded = jwt.verify(token_jwt, REFRESH_TOKEN_SECRET as string) as {
-      user_id: string;
+    const idDecoded = jwt.verify(token_jwt, CLERK_PUBLIC_KEY as string) as {
+      userId: string;
     };
-
-    const { message } = await this.notificationsRepository.activeNotifications(
-      token,
-      idDecoded.user_id
-    );
+    const { message } = await this.notificationsRepository.activeNotifications({
+      token: token,
+      id: idDecoded.userId,
+    });
 
     if (!message) {
       throw new AppError(
