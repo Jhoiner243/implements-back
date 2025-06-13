@@ -4,14 +4,20 @@ import {
   ProductoSeccion,
 } from "../entities/producto.entity";
 import { db } from "../frameworks/db/db";
+import { prismaContext } from "../frameworks/db/middleware";
 import { IProductos } from "../ts/interfaces/producto.interface";
 
 export class ProductoRepository implements IProductos {
   async addProducto(
     data: Omit<ProductoEntity, "id">
   ): Promise<{ message: string }> {
+    const { empresaId } = prismaContext.getStore() ?? { empresaId: null };
+    if (!empresaId) {
+      throw new Error("No se pudo determinar la empresa para la factura");
+    }
     await db.productos.create({
       data: {
+        empresaId,
         nombre: data.nombre,
         precio_compra: data.precio_compra,
         stock: data.stock,
@@ -36,6 +42,7 @@ export class ProductoRepository implements IProductos {
 
     return productos.map((producto) => ({
       id: producto.id,
+      empresaId: producto.empresaId,
       idProducto: producto.idProducto,
       nombre: producto.nombre,
       precio_compra: producto.precio_compra,
@@ -57,8 +64,13 @@ export class ProductoRepository implements IProductos {
   async createCategory(
     data: Omit<CategoryEntity, "id">
   ): Promise<{ message: string }> {
+    const { empresaId } = prismaContext.getStore() ?? { empresaId: null };
+    if (!empresaId) {
+      throw new Error("No se pudo determinar la empresa para la factura");
+    }
     await db.category.create({
       data: {
+        empresaId,
         name: data.name,
       },
     });

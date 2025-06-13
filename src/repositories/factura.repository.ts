@@ -6,6 +6,7 @@ import {
   StatusFactura,
 } from "../entities/facturas.entity";
 import { db } from "../frameworks/db/db";
+import { prismaContext } from "../frameworks/db/middleware";
 import { PanginationDto } from "../ts/dtos/paginationDto";
 import { IFacturas } from "../ts/interfaces/facturas.interface";
 import { emailFacts } from "../utils/helpers/email-facts";
@@ -13,34 +14,53 @@ import { emailFacts } from "../utils/helpers/email-facts";
 @injectable()
 export class FacturaRepository implements IFacturas {
   async dataFact(data: FacturasEntity): Promise<void> {
-    //Invalidamos la cache
-    await db.$accelerate.invalidate({ tags: ["today_invoices"] });
+    const { empresaId } = prismaContext.getStore() ?? { empresaId: null };
+    if (!empresaId) {
+      throw new Error("No se pudo determinar la empresa para la factura");
+    }
 
-    //creamos la factura
-    const faturaCreate = await db.factura.create({
-      data: {
-        detalles: {
-          create: (data.detalles ?? []).map(
-            (detalle: DetallesFacturasEntity) => ({
-              productoId: detalle.id_producto,
-              cantidad: detalle.cantidad,
-              precio: detalle.precio_venta,
-            })
-          ),
-        },
-        clienteId: data.id_cliente,
-        total: data.total,
-      },
-    });
+    let facturaCreada;
+    try {
+      facturaCreada = await db.$transaction(async (tx) => {
+        // 1) Crear factura con detalles
+        const factura = await tx.factura.create({
+          data: {
+            empresaId,
+            clienteId: data.id_cliente,
+            total: data.total,
+            detalles: {
+              create: (data.detalles ?? []).map(
+                (d: DetallesFacturasEntity) => ({
+                  productoId: d.id_producto,
+                  cantidad: d.cantidad,
+                  precio: d.precio_venta,
+                })
+              ),
+            },
+          },
+        });
 
-    await db.productos.update({
-      where: { id: data.detalles[0]?.id_producto },
-      data: {
-        stock: { decrement: data.detalles[0]?.cantidad ?? 0 },
-      },
-    });
+        // 2) Actualizar stock de cada producto
+        for (const d of data.detalles ?? []) {
+          await tx.productos.update({
+            where: { id: d.id_producto },
+            data: { stock: { decrement: d.cantidad } },
+          });
+        }
 
-    await emailFacts(faturaCreate.id);
+        return factura;
+      });
+
+      // 3) Invalidar la caché una vez confirmada la transacción
+      await db.$accelerate.invalidate({ tags: ["today_invoices"] });
+
+      // 4) Enviar correo
+      await emailFacts(facturaCreada.id);
+    } catch (err) {
+      // Manejo de error: log, rethrow o enviar respuesta de error
+      console.error("Error al procesar factura:", err);
+      throw err;
+    }
   }
 
   async CountFact() {

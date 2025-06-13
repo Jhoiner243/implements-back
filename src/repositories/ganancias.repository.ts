@@ -2,6 +2,7 @@ import { TipoPeriodo } from "@prisma/client";
 import { injectable } from "inversify";
 import { GananciasEntity } from "../entities/ganacias.entity";
 import { db } from "../frameworks/db/db";
+import { prismaContext } from "../frameworks/db/middleware";
 import { IGanancias } from "../ts/interfaces/ganancias.interface";
 
 @injectable()
@@ -12,8 +13,13 @@ export class GananciasRepository implements IGanancias {
     totalProfit: number,
     tipo_periodo: TipoPeriodo
   ): Promise<void> {
+    const { empresaId } = prismaContext.getStore() ?? { empresaId: null };
+    if (!empresaId) {
+      throw new Error("No se pudo determinar la empresa para la factura");
+    }
     await db.profitSummary.create({
       data: {
+        empresaId,
         fecha_inicio: startDate,
         fecha_fin: endDate,
         ganancia_total: totalProfit,

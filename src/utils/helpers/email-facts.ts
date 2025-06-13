@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { db } from "../../frameworks/db/db";
+import { prismaContext } from "../../frameworks/db/middleware";
 import { transporter } from "../transporter";
 
 /**
@@ -60,15 +61,26 @@ export async function emailFacts(facturaId: string) {
       data: { createdAt: new Date() },
     });
 
+    const { empresaId } = prismaContext.getStore() ?? { empresaId: null };
+    if (!empresaId) {
+      throw new Error("No se pudo determinar la empresa para la factura");
+    }
+
     await db.emailLog.create({
       data: {
+        empresaId,
         facturaId: factura.id,
         status: "Success",
       },
     });
   } catch {
+    const { empresaId } = prismaContext.getStore() ?? { empresaId: null };
+    if (!empresaId) {
+      throw new Error("No se pudo determinar la empresa para la factura");
+    }
     await db.emailLog.create({
       data: {
+        empresaId,
         facturaId: factura.id,
         status: "Failed",
       },

@@ -1,6 +1,7 @@
 import { injectable } from "inversify";
 import { UserEntity } from "../entities/user.entity";
 import { db } from "../frameworks/db/db";
+import { prismaContext } from "../frameworks/db/middleware";
 import { LoginDTO } from "../ts/dtos/LoginDTO";
 import { RegisterDTO } from "../ts/dtos/RegisterDTO";
 import { IAuth } from "../ts/interfaces/auth.interface";
@@ -10,8 +11,17 @@ export class AuthRepository implements IAuth {
   async registerUser(
     user: RegisterDTO
   ): Promise<{ message: string; userId: string }> {
+    const { empresaId = "1" } = prismaContext.getStore() ?? { empresaId: null };
+    if (!empresaId) {
+      throw new Error("No se pudo determinar la empresa para el usuario");
+    }
     const registerUser = await db.user.create({
       data: {
+        empresa: {
+          connect: {
+            id: empresaId,
+          },
+        },
         name: user.user_name,
         lastname: user.user_lastname,
         email: user.user_email,

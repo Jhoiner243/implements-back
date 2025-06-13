@@ -6,6 +6,7 @@ import { useExpressServer } from "routing-controllers";
 import { AnaliticsController } from "../../controllers/analitics.controller";
 import { AuthController } from "../../controllers/auth.controller";
 import { ClienteController } from "../../controllers/cliente.controller";
+import { EntidadController } from "../../controllers/entidad.controller";
 import { FacturaController } from "../../controllers/facturas.controller";
 import { GananciasController } from "../../controllers/ganancias.controller";
 import { McpController } from "../../controllers/mcp.controller";
@@ -47,6 +48,7 @@ export class RoutesSetup {
         AuthController,
         McpController,
         GananciasController,
+        EntidadController,
       ],
     });
   }

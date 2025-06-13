@@ -1,6 +1,7 @@
 import { injectable } from "inversify";
 import { FacturasEntity } from "../entities/facturas.entity";
 import { db } from "../frameworks/db/db";
+import { prismaContext } from "../frameworks/db/middleware";
 import { ResultPeriodoRate } from "../services/growt-rate.service";
 import { Analytics } from "../ts/interfaces/analitics.interface";
 
@@ -61,8 +62,25 @@ export class AnaliticsRepository implements Analytics {
     });
   }
   async ratePeriodGrowt({ fechas, periodo, growthRate }: ResultPeriodoRate) {
+    const { empresaId } = prismaContext.getStore() ?? { empresaId: null };
+    if (!empresaId) {
+      throw new Error("No se pudo determinar la empresa para la factura");
+    }
+    const empresa = await db.empresa.findUnique({
+      where: {
+        id: empresaId,
+      },
+    });
+    if (!empresa) {
+      throw new Error("Empresa no encontrada");
+    }
     await db.growtRate.create({
       data: {
+        empresa: {
+          connect: {
+            id: empresa.id,
+          },
+        },
         fechaActual: fechas.fechaActual,
         fechaAnterior: fechas.fechaAnterior,
         porcentaje: growthRate,
