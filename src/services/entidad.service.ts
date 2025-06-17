@@ -1,7 +1,8 @@
+import { clerkClient } from "@clerk/express";
 import { BillingCycle, typePlan } from "@prisma/client";
 import { inject, injectable } from "inversify";
 import { EntidadesRepository } from "../repositories/entidades.repository";
-import { RegisterEntidad } from "../ts/dtos/registerEntidadDto";
+import { CreatedEntity, RegisterEntidad } from "../ts/dtos/registerEntidadDto";
 import { EntidadSchema } from "../ts/validations/entidad.validations";
 import { AppError } from "../utils/errors/app-errors";
 
@@ -28,7 +29,7 @@ export class EntidadService {
     data,
   }: {
     data: RegisterEntidad;
-  }): Promise<{ message: string }> {
+  }): Promise<{ message: string; data?: CreatedEntity }> {
     const validDataEntidad = EntidadSchema.parse(data);
 
     const existEntidad = await this.entidadRepository.entidadByName(
@@ -38,15 +39,63 @@ export class EntidadService {
       throw new AppError("El nombre de esta entidad ya existe", 400);
     }
 
-    await this.entidadRepository.createEntidad({
-      data: {
-        ...validDataEntidad,
-        typePlan: validDataEntidad.typePlan as typePlan,
-        billingCycle: validDataEntidad.billingCycle as BillingCycle,
+    //Creamos la organizacion en clerk
+    const response = await clerkClient.organizations.createOrganization({
+      name: data.nombre,
+      createdBy: data.createBy,
+      publicMetadata: {
+        typePlan: data.typePlan,
+        billingCycle: data.billingCycle,
+        industry: data.industry,
+        contactPhone: data.contactPhone,
+        billingEmail: data.billingEmail,
+        billingAddress: data.billingAddress,
       },
     });
 
-    return { message: "Entidad creada correctamente" };
+    //Luego procedemos a guardar los datos en nuestra base de datos
+    if (response && response.createdBy) {
+      await this.entidadRepository.createEntidad({
+        data: {
+          organizationId: response.id,
+          createBy: response.createdBy,
+          ...validDataEntidad,
+          typePlan: validDataEntidad.typePlan as typePlan,
+          billingCycle: validDataEntidad.billingCycle as BillingCycle,
+        },
+      });
+
+      // Obtener la entidad recién creada para devolver los campos requeridos
+      const entidadCreada = await this.entidadRepository.entidadByName(
+        data.nombre
+      );
+
+      if (!entidadCreada) {
+        throw new AppError("No se pudo obtener la entidad recién creada", 500);
+      }
+
+      return {
+        message: "Entidad creada correctamente",
+        data: {
+          id: entidadCreada.id,
+          nombre: entidadCreada.nombre,
+          createBy: entidadCreada.createBy,
+          organizationId: entidadCreada.organizationId,
+          typePlan: entidadCreada.typePlan,
+          billingCycle: entidadCreada.billingCycle,
+          industry: entidadCreada.industry,
+          contactPhone: entidadCreada.contactPhone,
+          billingEmail: entidadCreada.billingEmail,
+          billingAddress: entidadCreada.billingAddress,
+          createdAt: entidadCreada.createdAt,
+          status: "active",
+        },
+      };
+    }
+
+    return {
+      message: "Error al crear la entidad",
+    };
   }
 
   // 🔹 Agregar usuario a entidad

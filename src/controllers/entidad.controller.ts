@@ -2,21 +2,28 @@ import { inject } from "inversify";
 import { Body, JsonController, Param, Post, Put } from "routing-controllers";
 import { EntidadService } from "../services/entidad.service";
 import { RegisterEntidad } from "../ts/dtos/registerEntidadDto";
+import { BaseController } from "./base.controller";
 
-@JsonController("/entidad-")
-export class EntidadController {
+@JsonController()
+export class EntidadController implements BaseController {
   constructor(@inject(EntidadService) private entidadService: EntidadService) {}
 
-  @Post("create")
+  @Post("/entidad-create")
   async entidadTheUser(@Body() data: RegisterEntidad) {
-    const { message } = await this.entidadService.createEntidad({ data });
-    return message;
+    const { message, data: datos } = await this.entidadService.createEntidad({
+      data: {
+        ...data,
+        contactPhone: Number(data.contactPhone),
+      },
+    });
+    console.log("DATA: ", data);
+    return { message, datos };
   }
 
   @Put("add-user")
   async addUserInEntidad(
     @Param("id") clerkId: string,
-    @Param("idEntidad") idEntidad: string
+    @Body() idEntidad: string
   ) {
     const { message } = await this.entidadService.addUserInEntidad({
       clerkId,

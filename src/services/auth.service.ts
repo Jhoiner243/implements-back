@@ -1,12 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import ClerkClient from "@clerk/backend";
 import { inject, injectable } from "inversify";
 import jwt from "jsonwebtoken";
-import {
-  CLERK_PUBLIC_KEY,
-  CLERK_PUBLISHABLE_KEY,
-  CLERK_SECRET_KEY,
-} from "../config/auth.config";
+import { CLERK_PUBLIC_KEY, CLERK_SECRET_KEY } from "../config/auth.config";
 import { AuthRepository } from "../repositories/auth.repository";
 import { RegisterDTO } from "../ts/dtos/RegisterDTO";
 import { IJwtPayload } from "../ts/types/IJwtPayload";
@@ -17,16 +12,6 @@ import { AppError } from "../utils/errors/app-errors";
 @injectable()
 export class AuthService {
   constructor(@inject(AuthRepository) private authRepository: AuthRepository) {}
-
-  private async clientClerk(userId: string) {
-    // Obtener el usuario desde Clerk
-    const clerkClient = ClerkClient.createClerkClient({
-      secretKey: CLERK_SECRET_KEY,
-      publishableKey: CLERK_PUBLISHABLE_KEY,
-    });
-
-    return clerkClient.users.getUser(userId);
-  }
 
   async registerUser({ data }: { data: RegisterDTO }) {
     // Verificar si el usuario ya está en la base de datos

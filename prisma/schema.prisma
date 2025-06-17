@@ -13,13 +13,17 @@ model User {
   email         String             @unique
   name          String
   lastname      String
-  token         String?          
+  token         String?
   favoritos     ProductFavorite[]
   prompts       AiQuery[]
   notifications Notification[]
+  empresaId     String?
+  empresa       Empresa?           @relation(fields: [empresaId], references: [organizationId], onDelete: Cascade)
+
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
 }
+
 
 
 model Clientes {
@@ -30,6 +34,9 @@ model Clientes {
   email      String
   phone      String
   address    String
+  empresaId String
+empresa   Empresa   @relation(fields: [empresaId], references: [organizationId], onDelete: Cascade)
+
   updatedAt DateTime  @updatedAt
   createdAt  DateTime  @default(now())
 
@@ -44,6 +51,9 @@ model Factura {
   emailLogs   EmailLog[]       @relation("FacturaEmailLogs")
   status      StatusFactura    @default(Pendiente)
   total       Float
+  empresaId String
+empresa   Empresa   @relation(fields: [empresaId], references: [organizationId], onDelete: Cascade)
+
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
@@ -74,6 +84,9 @@ model Productos {
   avaliable          Boolean @default(true)
   category           Category          @relation(fields: [categoryId], references: [id], onUpdate: Cascade)
   stockHistory       StockHistory[]
+  empresaId String
+empresa   Empresa   @relation(fields: [empresaId], references: [organizationId], onDelete: Cascade)
+
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
 }
@@ -85,6 +98,9 @@ model Category {
   products   Productos[]
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
+  empresaId String
+empresa   Empresa   @relation(fields: [empresaId], references: [organizationId], onDelete: Cascade)
+
 }
 
 model ProductFavorite {
@@ -93,23 +109,31 @@ model ProductFavorite {
   user       User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   productId  String
   product    Productos   @relation(fields: [productId], references: [id], onUpdate: Cascade)
+  empresaId  String
+  empresa    Empresa     @relation(fields: [empresaId], references: [organizationId], onDelete: Cascade)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
 }
+
 
 model AiQuery {
   id         String     @id @default(uuid())
   userId     String
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  empresaId  String
+  empresa    Empresa    @relation(fields: [empresaId], references: [organizationId], onDelete: Cascade)
   query      String
   response   String
   createdAt  DateTime   @default(now())
 }
 
+
 model Notification {
   id         String     @id @default(uuid())
   userId     String
   user       User       @relation(fields: [userId], references: [id], onUpdate: Cascade)
+  empresaId  String
+  empresa    Empresa    @relation(fields: [empresaId], references: [organizationId], onDelete: Cascade)
   message    String
   is_read    Boolean    @default(false)
   createdAt  DateTime   @default(now())
@@ -119,10 +143,12 @@ model Notification {
 model Token {
   id         String     @id @default(uuid())
   userId     String
+  empresaId  String
+  empresa    Empresa     @relation(fields: [empresaId], references: [organizationId], onDelete: Cascade)
   token      String
   createdAt  DateTime   @default(now())
-
 }
+
 
 model StockHistory {
   id          String     @id @default(uuid())
@@ -136,7 +162,10 @@ model StockHistory {
 model Roles {
   id        String      @id @default(uuid())
   name      Role        @default(USER)
+  empresaId String
+  empresa   Empresa     @relation(fields: [empresaId], references: [organizationId], onDelete: Cascade)
 }
+
 
 model ProfitSummary {
   id             String      @id @default(uuid())
@@ -144,8 +173,11 @@ model ProfitSummary {
   fecha_fin      DateTime
   ganancia_total Float
   tipo_periodo   TipoPeriodo
+  empresaId      String
+  empresa        Empresa     @relation(fields: [empresaId], references: [organizationId], onDelete: Cascade)
   createdAt      DateTime    @default(now())
 }
+
 
 model GrowtRate {
   id String @id @default(uuid())
@@ -153,13 +185,60 @@ model GrowtRate {
   fechaActual String
   fechaAnterior String
   tipoPeriodo TipoPeriodo
+  empresaId String
+empresa   Empresa   @relation(fields: [empresaId], references: [organizationId], onDelete: Cascade)
+
 }
 model EmailLog {
   id         String     @id @default(uuid())
   facturaId  String
   factura    Factura    @relation("FacturaEmailLogs", fields: [facturaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  empresaId  String
+  empresa    Empresa    @relation(fields: [empresaId], references: [organizationId], onDelete: Cascade)
   status     StatusEmail
 }
+
+
+model Empresa {
+  id              String            @id @default(uuid())
+  organizationId  String @unique
+  nombre          String
+  typePlan        typePlan
+  billingCycle    BillingCycle
+  billingEmail    String
+  billingAddress  String
+  contactPhone    Int
+  industry        String
+  createBy        String
+  users           User[] 
+  productos       Productos[]
+  clientes        Clientes[]
+  facturas        Factura[]
+  categorias      Category[]
+  growtRate       GrowtRate[]
+  aiQueries       AiQuery[]
+  favorites       ProductFavorite[]
+  notifications   Notification[]
+  tokens          Token[]
+  roles           Roles[]
+  profitSummaries ProfitSummary[]
+  emailLogs       EmailLog[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+}
+
+enum typePlan {
+  Gratuito
+  Basico
+  Premium
+}
+
+enum BillingCycle {
+  Mensual
+  Anual
+  Quincenal
+}
+
 
 enum TipoPeriodo {
   Diario
