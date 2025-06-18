@@ -207,7 +207,7 @@ model Empresa {
   billingCycle    BillingCycle
   billingEmail    String
   billingAddress  String
-  contactPhone    Int
+  contactPhone    BigInt
   industry        String
   createBy        String
   users           User[] 

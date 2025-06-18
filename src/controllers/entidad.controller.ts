@@ -13,10 +13,10 @@ export class EntidadController implements BaseController {
     const { message, data: datos } = await this.entidadService.createEntidad({
       data: {
         ...data,
-        contactPhone: Number(data.contactPhone),
+        contactPhone: BigInt(data.contactPhone),
       },
     });
-    console.log("DATA: ", data);
+    console.log("DATOSSS", datos);
     return { message, datos };
   }
 

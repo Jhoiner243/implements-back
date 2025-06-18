@@ -47,54 +47,46 @@ export class EntidadService {
         typePlan: data.typePlan,
         billingCycle: data.billingCycle,
         industry: data.industry,
-        contactPhone: data.contactPhone,
+        contactPhone: Number(data.contactPhone),
         billingEmail: data.billingEmail,
         billingAddress: data.billingAddress,
       },
     });
 
     //Luego procedemos a guardar los datos en nuestra base de datos
-    if (response && response.createdBy) {
-      await this.entidadRepository.createEntidad({
-        data: {
-          organizationId: response.id,
-          createBy: response.createdBy,
-          ...validDataEntidad,
-          typePlan: validDataEntidad.typePlan as typePlan,
-          billingCycle: validDataEntidad.billingCycle as BillingCycle,
-        },
-      });
+    await this.entidadRepository.createEntidad({
+      data: {
+        organizationId: response.id,
+        createBy: response.createdBy ?? "",
+        ...validDataEntidad,
+        typePlan: validDataEntidad.typePlan as typePlan,
+        billingCycle: validDataEntidad.billingCycle as BillingCycle,
+      },
+    });
 
-      // Obtener la entidad recién creada para devolver los campos requeridos
-      const entidadCreada = await this.entidadRepository.entidadByName(
-        data.nombre
-      );
+    // Obtener la entidad recién creada para devolver los campos requeridos
+    const entidadCreada = await this.entidadRepository.entidadByName(
+      data.nombre
+    );
 
-      if (!entidadCreada) {
-        throw new AppError("No se pudo obtener la entidad recién creada", 500);
-      }
-
-      return {
-        message: "Entidad creada correctamente",
-        data: {
-          id: entidadCreada.id,
-          nombre: entidadCreada.nombre,
-          createBy: entidadCreada.createBy,
-          organizationId: entidadCreada.organizationId,
-          typePlan: entidadCreada.typePlan,
-          billingCycle: entidadCreada.billingCycle,
-          industry: entidadCreada.industry,
-          contactPhone: entidadCreada.contactPhone,
-          billingEmail: entidadCreada.billingEmail,
-          billingAddress: entidadCreada.billingAddress,
-          createdAt: entidadCreada.createdAt,
-          status: "active",
-        },
-      };
+    if (!entidadCreada) {
+      throw new AppError("No se pudo obtener la entidad recién creada", 500);
     }
 
     return {
-      message: "Error al crear la entidad",
+      message: "Entidad creada correctamente",
+      data: {
+        id: entidadCreada.id,
+        nombre: entidadCreada.nombre,
+        typePlan: entidadCreada.typePlan,
+        billingCycle: entidadCreada.billingCycle,
+        industry: entidadCreada.industry,
+        contactPhone: Number(entidadCreada.contactPhone),
+        billingEmail: entidadCreada.billingEmail,
+        billingAddress: entidadCreada.billingAddress,
+        createdAt: entidadCreada.createdAt,
+        status: "active",
+      },
     };
   }
 

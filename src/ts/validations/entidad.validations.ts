@@ -6,7 +6,7 @@ export const EntidadSchema = z.object({
   typePlan: z.enum(Object.values(typePlan) as [string, ...string[]]),
   billingCycle: z.enum(Object.values(BillingCycle) as [string, ...string[]]),
   industry: z.string(),
-  contactPhone: z.number(),
+  contactPhone: z.bigint(),
   billingEmail: z.string().email(),
   billingAddress: z.string(),
 });

@@ -5,6 +5,7 @@ import { RegisterEntidad } from "../ts/dtos/registerEntidadDto";
 @injectable()
 export class EntidadesRepository {
   async createEntidad({ data }: { data: RegisterEntidad }) {
+    console.log("DATOS EN DB", data);
     const entidadId = await db.empresa.create({
       data: data,
     });
