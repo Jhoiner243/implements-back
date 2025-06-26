@@ -1,7 +1,3 @@
-Claro, aquí tenés la traducción al español del contenido:
-
----
-
 # Node.js - Arquitectura Limpia (Clean Code Architecture)
 
 ![Arquitectura Limpia](https://i.ibb.co/S0MQVFN/68747470733a2f2f626c6f672e636c65616e636f6465722e636f6d2f756e636c652d626f622f696d616765732f323031322d.jpg)
