@@ -88,9 +88,3 @@ src/
 ## Licencia
 
 Este proyecto está licenciado bajo la Licencia ISC. Ver el archivo [LICENSE](LICENSE) para más detalles.
-
-## ¡Disfrútalo!
-
----
-
-¿Querés que también te lo pase como `README.md` listo para GitHub?
