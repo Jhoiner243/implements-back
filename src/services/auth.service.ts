@@ -3,6 +3,7 @@ import { inject, injectable } from "inversify";
 import jwt from "jsonwebtoken";
 import { CLERK_PUBLIC_KEY, CLERK_SECRET_KEY } from "../config/auth.config";
 import { AuthRepository } from "../repositories/auth.repository";
+import { EntidadesRepository } from "../repositories/entidades.repository";
 import { RegisterDTO } from "../ts/dtos/RegisterDTO";
 import { IJwtPayload } from "../ts/types/IJwtPayload";
 import { Token } from "../ts/types/Token";
@@ -11,7 +12,11 @@ import { AppError } from "../utils/errors/app-errors";
 
 @injectable()
 export class AuthService {
-  constructor(@inject(AuthRepository) private authRepository: AuthRepository) {}
+  constructor(
+    @inject(AuthRepository) private authRepository: AuthRepository,
+    @inject(EntidadesRepository)
+    private entidadesRepository: EntidadesRepository
+  ) {}
 
   async registerUser({ data }: { data: RegisterDTO }) {
     // Verificar si el usuario ya está en la base de datos
@@ -73,6 +78,20 @@ export class AuthService {
       tokenInfo
     );
     return { accessToken: accessToken as string };
+  }
+
+  async authenticateUserInOrganizations({
+    user_clerkId,
+  }: {
+    user_clerkId: string;
+  }) {
+    const userValidRole = await this.entidadesRepository.verficationUserById({
+      userId: user_clerkId,
+    });
+
+    if (!userValidRole) throw new AppError("User not found in entidad", 404);
+
+    return true;
   }
 
   public verifyToken(type: Token, token: string): IJwtPayload | null {

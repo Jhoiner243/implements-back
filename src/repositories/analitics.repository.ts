@@ -1,16 +1,19 @@
 import { injectable } from "inversify";
 import { FacturasEntity } from "../entities/facturas.entity";
 import { db } from "../frameworks/db/db";
-import { prismaContext } from "../frameworks/db/middleware";
 import { ResultPeriodoRate } from "../services/growt-rate.service";
 import { Analytics } from "../ts/interfaces/analitics.interface";
+import { BaseRepository } from "../utils/tenant-id";
 
 @injectable()
-export class AnaliticsRepository implements Analytics {
+export class AnaliticsRepository extends BaseRepository implements Analytics {
   async getAnalitIcsPedidos(): Promise<FacturasEntity[]> {
+    const empresaId = this.getEmpresaId();
     const result = await db.factura.findMany({
+      where: {
+        empresa_id: empresaId,
+      },
       include: { detalles: true },
-      cacheStrategy: { ttl: 60 },
     });
     const facturas = result.map((factura) => {
       return {
@@ -35,20 +38,17 @@ export class AnaliticsRepository implements Analytics {
   }
 
   async getAnaliticsClientes() {
+    const empresaId = this.getEmpresaId();
     const result = await db.clientes.findMany({
-      cacheStrategy: {
-        ttl: 60,
+      where: {
+        empresa_id: empresaId,
       },
     });
     return result;
   }
 
   async getAnaliticsProductos() {
-    return await db.productos.findMany({
-      cacheStrategy: {
-        ttl: 60,
-      },
-    });
+    return await db.productos.findMany({});
   }
 
   async getDataGrowtRate() {
@@ -62,23 +62,13 @@ export class AnaliticsRepository implements Analytics {
     });
   }
   async ratePeriodGrowt({ fechas, periodo, growthRate }: ResultPeriodoRate) {
-    const { empresaId } = prismaContext.getStore() ?? { empresaId: null };
-    if (!empresaId) {
-      throw new Error("No se pudo determinar la empresa para la factura");
-    }
-    const empresa = await db.empresa.findUnique({
-      where: {
-        id: empresaId,
-      },
-    });
-    if (!empresa) {
-      throw new Error("Empresa no encontrada");
-    }
+    const empresaId = this.getEmpresaId();
+
     await db.growtRate.create({
       data: {
         empresa: {
           connect: {
-            id: empresa.id,
+            organizationId: empresaId,
           },
         },
         fechaActual: fechas.fechaActual,

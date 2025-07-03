@@ -5,18 +5,48 @@ import { RegisterEntidad } from "../ts/dtos/registerEntidadDto";
 @injectable()
 export class EntidadesRepository {
   async createEntidad({ data }: { data: RegisterEntidad }) {
-    console.log("DATOS EN DB", data);
     const entidadId = await db.empresa.create({
       data: data,
+    });
+
+    //Cuando se crea la entidad se actualiza la empresa para conectarala con el primer usuario que seria el creador de la empresa.
+    await db.empresa.update({
+      where: {
+        organizationId: data.organizationId,
+      },
+      data: {
+        users: {
+          connect: {
+            clerkId: data.createBy,
+          },
+        },
+      },
     });
 
     return entidadId.id;
   }
 
-  async verificationEntidadById({ idEntidad }: { idEntidad: string }) {
-    return await db.empresa.findFirst({
+  async getAllEntidadesId() {
+    return await db.empresa.findMany({
+      select: {
+        id: true,
+      },
+    });
+  }
+
+  async verficationUserById({ userId }: { userId: string }) {
+    return await db.user.findUnique({
       where: {
-        id: idEntidad,
+        clerkId: userId,
+      },
+    });
+  }
+
+  async verificationEntidadById({ idEntidad }: { idEntidad: string }) {
+    console.log("ID DE LA ENTIDAD A VERIFICAR", idEntidad);
+    return await db.empresa.findUnique({
+      where: {
+        organizationId: idEntidad,
       },
 
       include: {
@@ -61,6 +91,14 @@ export class EntidadesRepository {
     return await db.empresa.findFirst({
       where: {
         nombre: name,
+      },
+    });
+  }
+
+  async deleteEntidad({ id }: { id: string }) {
+    return await db.empresa.delete({
+      where: {
+        organizationId: id,
       },
     });
   }

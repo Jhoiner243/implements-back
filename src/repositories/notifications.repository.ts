@@ -1,8 +1,8 @@
 import { injectable } from "inversify";
 import { NotificationsEntity } from "../entities/notifications.entity";
 import { db } from "../frameworks/db/db";
-import { prismaContext } from "../frameworks/db/middleware";
 import { INotifications } from "../ts/interfaces/notifications.interface";
+import { BaseRepository } from "../utils/tenant-id";
 
 export interface GetNotificationsEntity {
   message: string;
@@ -10,12 +10,12 @@ export interface GetNotificationsEntity {
   is_read: boolean;
 }
 @injectable()
-export class NotificationsRepository implements INotifications {
+export class NotificationsRepository
+  extends BaseRepository
+  implements INotifications
+{
   async sendMulticasteNotifications(data: NotificationsEntity): Promise<void> {
-    const { empresaId } = prismaContext.getStore() ?? { empresaId: null };
-    if (!empresaId) {
-      throw new Error("No se pudo determinar la empresa para la factura");
-    }
+    const empresaId = this.getEmpresaId();
     await db.notification.create({
       data: {
         empresa: {
@@ -53,7 +53,18 @@ export class NotificationsRepository implements INotifications {
   }
 
   async getForMulicastNotifications(): Promise<GetNotificationsEntity[]> {
-    return await db.notification.findMany();
+    const empresaId = this.getEmpresaId();
+    return await db.notification.findMany({
+      where: {
+        empresa_id: empresaId,
+        is_read: false,
+      },
+      select: {
+        message: true,
+        createdAt: true,
+        is_read: true,
+      },
+    });
   }
 
   async notificationDelete(id: string): Promise<{ message: string }> {

@@ -8,7 +8,6 @@ import { ServerSetup } from "../frameworks/setups/server.setup";
 import { TerminusSetup } from "../frameworks/setups/terminus.setup";
 import { Port } from "../ts/types/port";
 
-
 @injectable()
 export class App {
   private app: Express;
@@ -20,18 +19,18 @@ export class App {
     @inject(ServerSetup) private serverSetup: ServerSetup,
     @inject(MCPClient) private mcpClient: MCPClient,
     @inject(TerminusSetup) private terminusSetup: TerminusSetup
-  ){
-    this.app = express()
-    this.port =  PORT
+  ) {
+    this.app = express();
+    this.port = PORT;
   }
 
-    start(): void {
-    this.middlewaresSetup.init(this.app)
-    this.mcpClient.connectToServer()
-    this.routesSetup.setup(this.app)
-    const server = this.serverSetup.create(this.app, this.port)
-    
-   this.terminusSetup.setup(server)
-   this.mcpClient.cleanup()
+  start(): void {
+    this.middlewaresSetup.init(this.app);
+    this.mcpClient.connectToServer();
+    this.routesSetup.setup(this.app);
+    const server = this.serverSetup.create(this.app, this.port);
+
+    this.terminusSetup.setup(server);
+    this.mcpClient.cleanup();
   }
 }

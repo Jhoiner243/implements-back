@@ -1,6 +1,7 @@
 export interface ProductoEntity {
   id: string;
   idProducto: number;
+  empresa_id: string;
   nombre: string;
   precio_compra: number;
   stock: number;

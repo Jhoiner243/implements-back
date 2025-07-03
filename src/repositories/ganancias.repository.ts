@@ -2,24 +2,21 @@ import { TipoPeriodo } from "@prisma/client";
 import { injectable } from "inversify";
 import { GananciasEntity } from "../entities/ganacias.entity";
 import { db } from "../frameworks/db/db";
-import { prismaContext } from "../frameworks/db/middleware";
 import { IGanancias } from "../ts/interfaces/ganancias.interface";
+import { BaseRepository } from "../utils/tenant-id";
 
 @injectable()
-export class GananciasRepository implements IGanancias {
+export class GananciasRepository extends BaseRepository implements IGanancias {
   async createProfit(
     startDate: Date,
     endDate: Date,
     totalProfit: number,
     tipo_periodo: TipoPeriodo
   ): Promise<void> {
-    const { empresaId } = prismaContext.getStore() ?? { empresaId: null };
-    if (!empresaId) {
-      throw new Error("No se pudo determinar la empresa para la factura");
-    }
+    const empresaId = this.getEmpresaId();
     await db.profitSummary.create({
       data: {
-        empresaId,
+        empresa_id: empresaId,
         fecha_inicio: startDate,
         fecha_fin: endDate,
         ganancia_total: totalProfit,
@@ -44,7 +41,9 @@ export class GananciasRepository implements IGanancias {
     });
   }
   async getProfit(): Promise<GananciasEntity[]> {
+    const empresaId = this.getEmpresaId();
     return db.profitSummary.findMany({
+      where: { empresa_id: empresaId },
       orderBy: {
         id: "desc",
       },
@@ -53,7 +52,9 @@ export class GananciasRepository implements IGanancias {
   }
 
   async getProfitLast() {
+    const empresaId = this.getEmpresaId();
     return db.profitSummary.findMany({
+      where: { empresa_id: empresaId },
       select: {
         createdAt: true,
         ganancia_total: true,
@@ -62,10 +63,11 @@ export class GananciasRepository implements IGanancias {
       take: 1,
     });
   }
-  async getProfitForCron() {
+  async getProfitForCron({ empresaId }: { empresaId: string }) {
     const findFirstProfit = await db.profitSummary.findMany({
       where: {
         tipo_periodo: "Diario",
+        empresa_id: empresaId,
       },
       orderBy: {
         id: "asc",

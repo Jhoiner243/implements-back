@@ -3,6 +3,7 @@ import { inject, injectable } from "inversify";
 import { NotificationsEntity } from "../entities/notifications.entity";
 import messaging from "../frameworks/firabase-admin/admin.sdk";
 import { AuthRepository } from "../repositories/auth.repository";
+import { EntidadesRepository } from "../repositories/entidades.repository";
 import { GananciasRepository } from "../repositories/ganancias.repository";
 import { NotificationsRepository } from "../repositories/notifications.repository";
 import { GrowthRateService } from "./growt-rate.service";
@@ -14,36 +15,44 @@ export class AutomatedGrowthIndex {
     @inject(GananciasRepository) private profitSummary: GananciasRepository,
     @inject(AuthRepository) private userToken: AuthRepository,
     @inject(NotificationsRepository)
-    private notificationRepository: NotificationsRepository
+    private notificationRepository: NotificationsRepository,
+    @inject(EntidadesRepository) private entidades: EntidadesRepository
   ) {}
 
   async cronAutomatedCall(): Promise<void | null> {
     try {
-      const diaActual = await this.profitSummary.getProfitForCron(); // Datos de hoy
-      const mapData = (diaActual ?? []).map((data) => ({
-        tipoPeriodo: data.tipo_periodo,
-        fecha: data.createdAt,
-        gananciaTotal: data.ganancia_total,
-      }));
+      const entidades = await this.entidades.getAllEntidadesId();
 
-      if (mapData[0] && mapData[1]) {
-        const resultado: void = await this.growtRateService.earningPeriod({
-          data: {
-            ganaciaTotalActual: {
-              fecha: mapData[1].fecha,
-              total: mapData[1].gananciaTotal,
-            },
-            periodoAnterior: {
-              fecha: mapData[0].fecha,
-              total: mapData[0].gananciaTotal,
-            },
-            tipoPeriodo: "Diario",
-          },
+      entidades.forEach(async (entidad: { id: string }) => {
+        const empresaId = entidad.id;
+        const diaActual = await this.profitSummary.getProfitForCron({
+          empresaId,
         });
+        const mapData = (diaActual ?? []).map((data) => ({
+          tipoPeriodo: data.tipo_periodo,
+          fecha: data.createdAt,
+          gananciaTotal: data.ganancia_total,
+        }));
 
-        return resultado;
-      }
-      return null;
+        if (mapData[0] && mapData[1]) {
+          const resultado: void = await this.growtRateService.earningPeriod({
+            data: {
+              ganaciaTotalActual: {
+                fecha: mapData[1].fecha,
+                total: mapData[1].gananciaTotal,
+              },
+              periodoAnterior: {
+                fecha: mapData[0].fecha,
+                total: mapData[0].gananciaTotal,
+              },
+              tipoPeriodo: "Diario",
+            },
+          });
+
+          return resultado;
+        }
+        return null;
+      });
     } catch (err) {
       console.error("Error al crear growth rate:", err);
       throw new Error("Error al crear growth rate");

@@ -6,18 +6,15 @@ import {
   StatusFactura,
 } from "../entities/facturas.entity";
 import { db } from "../frameworks/db/db";
-import { prismaContext } from "../frameworks/db/middleware";
 import { PanginationDto } from "../ts/dtos/paginationDto";
 import { IFacturas } from "../ts/interfaces/facturas.interface";
 import { emailFacts } from "../utils/helpers/email-facts";
+import { BaseRepository } from "../utils/tenant-id";
 
 @injectable()
-export class FacturaRepository implements IFacturas {
+export class FacturaRepository extends BaseRepository implements IFacturas {
   async dataFact(data: FacturasEntity): Promise<void> {
-    const { empresaId } = prismaContext.getStore() ?? { empresaId: null };
-    if (!empresaId) {
-      throw new Error("No se pudo determinar la empresa para la factura");
-    }
+    const empresaId = this.getEmpresaId();
 
     let facturaCreada;
     try {
@@ -25,7 +22,7 @@ export class FacturaRepository implements IFacturas {
         // 1) Crear factura con detalles
         const factura = await tx.factura.create({
           data: {
-            empresaId,
+            empresa_id: empresaId,
             clienteId: data.id_cliente,
             total: data.total,
             detalles: {
@@ -52,7 +49,6 @@ export class FacturaRepository implements IFacturas {
       });
 
       // 3) Invalidar la caché una vez confirmada la transacción
-      await db.$accelerate.invalidate({ tags: ["today_invoices"] });
 
       // 4) Enviar correo
       await emailFacts(facturaCreada.id);
@@ -70,12 +66,13 @@ export class FacturaRepository implements IFacturas {
     page = 1,
     limit = 10,
   }: PanginationDto): Promise<FacturaSeccion[]> {
+    const empresaId = this.getEmpresaId();
     const Facturas = await db.factura.findMany({
       orderBy: { createdAt: "desc" },
-      cacheStrategy: { ttl: 60, tags: ["today_invoices"] },
       skip: (page - 1) * limit,
       take: limit,
       include: { cliente: true },
+      where: { empresa_id: empresaId },
     });
 
     return Facturas.map((factura) => ({
@@ -95,9 +92,10 @@ export class FacturaRepository implements IFacturas {
     limit = 10,
     status,
   }: PanginationDto): Promise<FacturaSeccion[]> {
+    const empresaId = this.getEmpresaId();
     const Facturas = await db.factura.findMany({
       skip: (page - 1) * limit,
-      where: { status },
+      where: { status, empresa_id: empresaId },
       take: limit,
       include: { cliente: true },
     });
@@ -122,9 +120,11 @@ export class FacturaRepository implements IFacturas {
     });
   }
   async getFacturaById(id: string) {
+    const empresaId = this.getEmpresaId();
     return await db.factura.findUnique({
       where: {
         id: id,
+        empresa_id: empresaId,
       },
       include: {
         cliente: {
@@ -146,9 +146,6 @@ export class FacturaRepository implements IFacturas {
             },
           },
         },
-      },
-      cacheStrategy: {
-        ttl: 60,
       },
     });
   }

@@ -68,7 +68,7 @@ export async function emailFacts(facturaId: string) {
 
     await db.emailLog.create({
       data: {
-        empresaId,
+        empresa_id: empresaId,
         facturaId: factura.id,
         status: "Success",
       },
@@ -80,7 +80,7 @@ export async function emailFacts(facturaId: string) {
     }
     await db.emailLog.create({
       data: {
-        empresaId,
+        empresa_id: empresaId,
         facturaId: factura.id,
         status: "Failed",
       },

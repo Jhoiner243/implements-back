@@ -15,7 +15,7 @@ export class AuthRepository implements IAuth {
         name: user.user_name,
         lastname: user.user_lastname,
         email: user.user_email,
-        clerkId: user.user_clerkId, // Make sure RegisterDTO has user_clerkId
+        clerkId: user.user_clerkId,
       },
     });
 

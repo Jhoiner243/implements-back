@@ -6,12 +6,12 @@ import { TerminusSetup } from "../../frameworks/setups/terminus.setup";
 
 export const TYPES = {
   Routes: Symbol.for("Routes"),
-  App: Symbol.for("App")
+  App: Symbol.for("App"),
 };
 
 export const setupBinding = new ContainerModule((bind: interfaces.Bind) => {
-  bind(MiddlewaresSetup).toSelf()
-  bind(RoutesSetup).toSelf()
-  bind(ServerSetup).toSelf()
-  bind(TerminusSetup).toSelf()
-})
+  bind(MiddlewaresSetup).toSelf();
+  bind(RoutesSetup).toSelf();
+  bind(ServerSetup).toSelf();
+  bind(TerminusSetup).toSelf();
+});

@@ -1,11 +1,18 @@
+import { Request } from "express";
 import { inject } from "inversify";
-import { Body, JsonController, Param, Post, Put } from "routing-controllers";
+import {
+  Body,
+  JsonController,
+  Param,
+  Post,
+  Put,
+  Req,
+} from "routing-controllers";
 import { EntidadService } from "../services/entidad.service";
 import { RegisterEntidad } from "../ts/dtos/registerEntidadDto";
-import { BaseController } from "./base.controller";
 
 @JsonController()
-export class EntidadController implements BaseController {
+export class EntidadController {
   constructor(@inject(EntidadService) private entidadService: EntidadService) {}
 
   @Post("/entidad-create")
@@ -16,11 +23,10 @@ export class EntidadController implements BaseController {
         contactPhone: BigInt(data.contactPhone),
       },
     });
-    console.log("DATOSSS", datos);
     return { message, datos };
   }
 
-  @Put("add-user")
+  @Put("/add-user")
   async addUserInEntidad(
     @Param("id") clerkId: string,
     @Body() idEntidad: string
@@ -33,7 +39,7 @@ export class EntidadController implements BaseController {
     return message;
   }
 
-  @Post("verification")
+  @Post("/verification")
   async verificationEntidadById(@Body() idEntidad: string) {
     const { message, valid } =
       await this.entidadService.verificationEntidadById({
@@ -41,5 +47,26 @@ export class EntidadController implements BaseController {
       });
 
     return { message, valid };
+  }
+
+  @Post("/delete-entidad")
+  async deleteEntidad(@Req() req: Request) {
+    try {
+      const event = req.body;
+      const {
+        data: { id },
+      } = event;
+      console.log("BODY", req.body);
+
+      console.log("EVENTO", event);
+      const { message } = await this.entidadService.deleteOrganization({
+        idEntidad: id,
+      });
+
+      return message;
+    } catch (error) {
+      console.error("Error en deleteEntidad:", error);
+      throw new Error("Error al eliminar la entidad");
+    }
   }
 }

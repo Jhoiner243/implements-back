@@ -78,6 +78,7 @@ export class EntidadService {
       data: {
         id: entidadCreada.id,
         nombre: entidadCreada.nombre,
+        organizationId: entidadCreada.organizationId,
         typePlan: entidadCreada.typePlan,
         billingCycle: entidadCreada.billingCycle,
         industry: entidadCreada.industry,
@@ -130,7 +131,7 @@ export class EntidadService {
     idEntidad,
   }: {
     idEntidad: string;
-  }): Promise<{ message: string; valid: boolean; name?: string }> {
+  }): Promise<{ message: string; valid: boolean; name?: string; id?: string }> {
     if (!idEntidad || typeof idEntidad !== "string") {
       throw new AppError("Error al obtener el id", 404);
     }
@@ -141,6 +142,7 @@ export class EntidadService {
 
     if (entidad) {
       return {
+        id: entidad.id,
         name: entidad.nombre,
         valid: true,
         message: "La verificación fue exitosa",
@@ -151,5 +153,36 @@ export class EntidadService {
       valid: false,
       message: "El id no es correcto.",
     };
+  }
+
+  async deleteOrganization({
+    idEntidad,
+  }: {
+    idEntidad: string;
+  }): Promise<{ message: string }> {
+    try {
+      if (!idEntidad || typeof idEntidad !== "string") {
+        throw new AppError("Error al obtener el id", 404);
+      }
+
+      const entidad = await this.entidadRepository.verificationEntidadById({
+        idEntidad,
+      });
+
+      console.log("Entidad encontrada:", entidad);
+      if (!entidad) {
+        throw new AppError("Entidad no encontrada", 404);
+      }
+
+      // Eliminar la entidad de la base de datos
+      await this.entidadRepository.deleteEntidad({
+        id: entidad.organizationId,
+      });
+
+      return { message: "Organización eliminada correctamente" };
+    } catch (error) {
+      console.error("Error al eliminar la organización:", error);
+      throw new AppError("Error al eliminar la organización", 500);
+    }
   }
 }

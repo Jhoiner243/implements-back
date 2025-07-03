@@ -37,7 +37,7 @@ export class ProductoController implements BaseController {
   ) {
     try {
       const { message } = await this.productoService.createCategory(data);
-      return res.status(200).json({ message });
+      return message;
     } catch {
       return res.status(500).json({ message: "Error de servidor interno" });
     }

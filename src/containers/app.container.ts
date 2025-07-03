@@ -12,7 +12,6 @@ import { productosBinding } from "./bindings/productos.binding";
 import { setupBinding } from "./bindings/setup.binding";
 
 export const appContainer = new Container();
-
 appContainer.load(
   setupBinding,
   entidadesBinding,

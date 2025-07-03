@@ -4,20 +4,17 @@ import {
   ProductoSeccion,
 } from "../entities/producto.entity";
 import { db } from "../frameworks/db/db";
-import { prismaContext } from "../frameworks/db/middleware";
 import { IProductos } from "../ts/interfaces/producto.interface";
+import { BaseRepository } from "../utils/tenant-id";
 
-export class ProductoRepository implements IProductos {
+export class ProductoRepository extends BaseRepository implements IProductos {
   async addProducto(
     data: Omit<ProductoEntity, "id">
   ): Promise<{ message: string }> {
-    const { empresaId } = prismaContext.getStore() ?? { empresaId: null };
-    if (!empresaId) {
-      throw new Error("No se pudo determinar la empresa para la factura");
-    }
+    const empresaId = this.getEmpresaId();
     await db.productos.create({
       data: {
-        empresaId,
+        empresa_id: empresaId,
         nombre: data.nombre,
         precio_compra: data.precio_compra,
         stock: data.stock,
@@ -28,21 +25,18 @@ export class ProductoRepository implements IProductos {
   }
 
   async getAllProducto(): Promise<ProductoSeccion[]> {
+    const empresaId = this.getEmpresaId();
     const productos = await db.productos.findMany({
       where: {
+        empresa_id: empresaId,
         avaliable: true,
       },
       include: { category: true },
-      cacheStrategy: {
-        ttl: 300,
-        swr: 600,
-        tags: ["catalog_products"],
-      },
     });
 
     return productos.map((producto) => ({
       id: producto.id,
-      empresaId: producto.empresaId,
+      empresa_id: producto.empresa_id,
       idProducto: producto.idProducto,
       nombre: producto.nombre,
       precio_compra: producto.precio_compra,
@@ -53,8 +47,6 @@ export class ProductoRepository implements IProductos {
   }
 
   async deleteProducto(id_producto: string): Promise<void> {
-    await db.$accelerate.invalidate({ tags: ["catalog_products"] });
-
     await db.productos.update({
       where: { id: id_producto },
       data: { avaliable: false },
@@ -64,29 +56,36 @@ export class ProductoRepository implements IProductos {
   async createCategory(
     data: Omit<CategoryEntity, "id">
   ): Promise<{ message: string }> {
-    const { empresaId } = prismaContext.getStore() ?? { empresaId: null };
-    if (!empresaId) {
-      throw new Error("No se pudo determinar la empresa para la factura");
+    try {
+      const empresaId = this.getEmpresaId();
+      console.log("Empresa ID:", empresaId);
+
+      console.log("Datos de la categoría:", data);
+      await db.category.create({
+        data: {
+          empresa_id: empresaId,
+          name: data.name,
+        },
+      });
+
+      return { message: "Categoría creada exitosamente" };
+    } catch (error) {
+      console.error("Error al crear la categoría:", error);
+      throw new Error("No se pudo crear la categoría");
     }
-    await db.category.create({
-      data: {
-        empresaId,
-        name: data.name,
-      },
-    });
-    return { message: "Categoria agregada exitosamente" };
   }
 
   async getAllCategory(): Promise<CategoryEntity[]> {
-    const category = await db.category.findMany();
+    const empresaId = this.getEmpresaId();
+    const category = await db.category.findMany({
+      where: { empresa_id: empresaId },
+    });
     return category;
   }
   async updateProducto(
     id_producto: string,
     data: Partial<ProductoEntity>
   ): Promise<{ message: string }> {
-    await db.$accelerate.invalidate({ tags: ["catalog_products"] });
-
     await db.productos.update({
       where: { id: id_producto },
       data: {
@@ -99,8 +98,9 @@ export class ProductoRepository implements IProductos {
     return { message: "Producto actualizado exitosamente" };
   }
   async getById(id_producto: string): Promise<ProductoEntity | null> {
+    const empresaId = this.getEmpresaId();
     const producto = await db.productos.findUnique({
-      where: { id: id_producto, avaliable: true },
+      where: { id: id_producto, avaliable: true, empresa_id: empresaId },
     });
     return producto;
   }

@@ -7,13 +7,21 @@ export interface RegisterEntidad {
   typePlan: typePlan;
   billingCycle: BillingCycle;
   industry: string;
-  contactPhone: number;
+  contactPhone: bigint | number;
   billingEmail: string;
   billingAddress: string;
 }
 
-export interface CreatedEntity extends RegisterEntidad {
+export interface CreatedEntity {
   id: string;
   createdAt: Date;
+  organizationId: string;
   status: "active" | "pending" | "inactive";
+  nombre: string;
+  typePlan: typePlan;
+  billingCycle: BillingCycle;
+  industry: string;
+  contactPhone: number;
+  billingEmail: string;
+  billingAddress: string;
 }
