@@ -1,3 +1,4 @@
+import { Factura } from "@prisma/client";
 import { injectable } from "inversify";
 import {
   DetallesFacturasEntity,
@@ -149,8 +150,11 @@ export class FacturaRepository extends BaseRepository implements IFacturas {
       },
     });
   }
-  async updateFact(id: string, data: Partial<FacturaSeccion>): Promise<void> {
-    await db.factura.update({
+  async updateFact(
+    id: string,
+    data: Partial<FacturaSeccion>
+  ): Promise<Factura> {
+    const factura = await db.factura.update({
       where: {
         id: id,
       },
@@ -167,5 +171,6 @@ export class FacturaRepository extends BaseRepository implements IFacturas {
         total: data.total,
       },
     });
+    return factura;
   }
 }

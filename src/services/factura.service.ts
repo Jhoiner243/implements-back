@@ -1,4 +1,6 @@
 import { inject, injectable } from "inversify";
+import { FacturaCacheService } from "../cache/factura.cache";
+import { TYPESCACHE } from "../containers/bindings/cache.binding";
 import { FacturaSeccion, FacturasEntity } from "../entities/facturas.entity";
 import { FacturaRepository } from "../repositories/factura.repository";
 import { PanginationDto } from "../ts/dtos/paginationDto";
@@ -10,15 +12,32 @@ import { DiaryProfit } from "./diary-profit.service";
 export class FacturaService {
   constructor(
     @inject(FacturaRepository) private facturaRepository: FacturaRepository,
-    @inject(DiaryProfit) private diaryProfit: DiaryProfit
+    @inject(DiaryProfit) private diaryProfit: DiaryProfit,
+    @inject(TYPESCACHE.FacturaCacheService)
+    private facturaCache: FacturaCacheService
   ) {}
+
+  async clearAllFacturaCache(): Promise<{ message: string }> {
+    try {
+      return await this.facturaCache.clearAllFacturaCache();
+    } catch (err) {
+      console.error("Error al limpiar cache:", err);
+      throw AppError.error("Error al limpiar el cache", 500);
+    }
+  }
+
+  async clearFacturaCacheById(id: string): Promise<{ message: string }> {
+    try {
+      return await this.facturaCache.clearFacturaCacheById(id);
+    } catch (err) {
+      console.error("Error al limpiar cache de factura:", err);
+      throw AppError.error("Error al limpiar el cache de la factura", 500);
+    }
+  }
 
   async dataFact(data: FacturasEntity): Promise<{ message: string }> {
     try {
-      //Validamos los datos con zod
       const facturaValid = FacturasEntitySchema.parse(data);
-
-      // Agregamos la propiedad createdAt
       const facturaWithCreatedAt = {
         ...facturaValid,
         createdAt: new Date(),
@@ -28,7 +47,6 @@ export class FacturaService {
         })),
       };
 
-      // Enviamos datos validados
       await this.facturaRepository.dataFact(facturaWithCreatedAt);
 
       const diary = facturaWithCreatedAt.detalles.map((detalle) => ({
@@ -45,13 +63,13 @@ export class FacturaService {
         fecha: diary[0].fecha,
       });
 
+      // Invalida todos los caches de listado y conteo (versiones y conteos)
+      await this.clearAllFacturaCache();
+
       return { message: "Factura creada exitosamente" };
     } catch (err) {
-      if (err instanceof AppError) {
-        return AppError.error("Error de datos en appError", 500);
-      } else {
-        throw err;
-      }
+      console.error("Error en dataFact:", err);
+      throw AppError.error("Error de datos en appError", 500);
     }
   }
 
@@ -61,25 +79,45 @@ export class FacturaService {
     totalFact: number;
   }> {
     try {
-      const facturas = await this.facturaRepository.getFact({
-        status,
-        limit: limit,
-        page,
-      });
-      const totalFact = await this.facturaRepository.CountFact();
-      const lastPage = Math.ceil(totalFact / limit);
-
-      return {
-        facturas,
-        totalFact: totalFact,
-        lastPages: lastPage,
-      };
-    } catch (err) {
-      if (err) {
-        throw AppError.error("Error al enviar facturas", 500);
-      } else {
-        throw err;
+      // Si status es undefined, se cachea como 'ALL'
+      const version = parseInt(
+        this.facturaCache.getVersionCacheKey(status) ?? "0",
+        10
+      );
+      const cached = await this.facturaCache.getFacturasListCache<{
+        facturas: FacturaSeccion[];
+        lastPages: number;
+        totalFact: number;
+      }>(status, limit, page, version);
+      if (cached) {
+        return cached;
       }
+
+      let totalFact = await this.facturaCache.getTotalCountCache(status);
+      if (totalFact === 0) {
+        // Si status es undefined, traer todas las facturas
+        totalFact = await this.facturaRepository.CountFact();
+        await this.facturaCache.setTotalCountCache(status, totalFact);
+      }
+      const lastPage = Math.ceil(totalFact / limit);
+      // Si status es undefined, traer todas las facturas
+      const facturas = status
+        ? await this.facturaRepository.getFact({ status, limit, page })
+        : await this.facturaRepository.getFact({ limit, page });
+      const result = { facturas, totalFact, lastPages: lastPage };
+
+      // Guarda en cache la lista de facturas
+      await this.facturaCache.setFacturasListCache(
+        status,
+        limit,
+        page,
+        version,
+        result
+      );
+      return result;
+    } catch (err) {
+      console.error("Error en getFact:", err);
+      throw AppError.error("Error al enviar facturas", 500);
     }
   }
 
@@ -93,41 +131,82 @@ export class FacturaService {
     totalFact: number;
   }> {
     try {
-      const facturas = await this.facturaRepository.getStatus({
-        status,
-        limit: limit,
-        page,
-      });
-      const totalFact = await this.facturaRepository.CountFact();
-      const lastPage = Math.ceil(totalFact / limit);
-
-      return {
-        facturas,
-        totalFact: totalFact,
-        lastPages: lastPage,
-      };
-    } catch (err) {
-      if (err) {
-        throw AppError.error("Error al enviar facturas", 500);
-      } else {
-        throw err;
+      const version = parseInt(
+        this.facturaCache.getVersionCacheKey(status) ?? "0",
+        10
+      );
+      const cached = await this.facturaCache.getFacturasListCache<{
+        facturas: FacturaSeccion[];
+        lastPages: number;
+        totalFact: number;
+      }>(status, limit, page, version);
+      if (cached) {
+        return cached;
       }
+      // Si status es undefined, traer todas las facturas
+      const facturas = status
+        ? await this.facturaRepository.getStatus({ status, limit, page })
+        : await this.facturaRepository.getFact({ limit, page });
+      let totalFact = await this.facturaCache.getTotalCountCache(status);
+      if (totalFact === 0) {
+        totalFact = status
+          ? await this.facturaRepository.CountFact()
+          : await this.facturaRepository.CountFact();
+        await this.facturaCache.setTotalCountCache(status, totalFact);
+      }
+      const lastPage = Math.ceil(totalFact / limit);
+      const result = { facturas, totalFact, lastPages: lastPage };
+      await this.facturaCache.setFacturasListCache(
+        status,
+        limit,
+        page,
+        version,
+        result
+      );
+      return result;
+    } catch (err) {
+      console.error("Error en getFacturaWithStatus:", err);
+      throw AppError.error("Error al enviar facturas", 500);
     }
   }
+
   async getFacturaById(id: string) {
-    return this.facturaRepository.getFacturaById(id);
+    try {
+      const cached =
+        await this.facturaCache.getFacturaByIdCache<FacturaSeccion>(id);
+      if (cached) {
+        return cached;
+      }
+      const data = await this.facturaRepository.getFacturaById(id);
+      if (data) {
+        await this.facturaCache.setFacturaByIdCache(id, data);
+      }
+      return data;
+    } catch (err) {
+      console.error("Error en getFacturaById:", err);
+      throw AppError.error("Error al obtener la factura", 500);
+    }
   }
 
   async deleteFact(id: string): Promise<{ message: string }> {
     try {
+      const factura = await this.facturaRepository.getFacturaById(id);
+      if (factura) {
+        await this.facturaCache.invalidateFacturaCache(id);
+        // Invalida cache del status anterior (si existe)
+        if (factura.status) {
+          await this.facturaCache.invalidateListCache(factura.status);
+          await this.facturaCache.invalidateCountCache(factura.status);
+        }
+        // Invalida también el cache global (ALL)
+        await this.facturaCache.invalidateListCache();
+        await this.facturaCache.invalidateCountCache();
+      }
       await this.facturaRepository.deleteFact(id);
       return { message: "Factura eliminada exitosamente" };
     } catch (err) {
-      if (err instanceof AppError) {
-        return AppError.error("Error al eliminar la factura", 500);
-      } else {
-        throw err;
-      }
+      console.error("Error en deleteFact:", err);
+      throw AppError.error("Error al eliminar la factura", 500);
     }
   }
 
@@ -136,14 +215,29 @@ export class FacturaService {
     data: Partial<FacturaSeccion>
   ): Promise<{ message: string }> {
     try {
-      await this.facturaRepository.updateFact(id, data);
+      await this.facturaRepository.getFacturaById(id);
+      const updatedFactura = await this.facturaRepository.updateFact(id, data);
+      if (updatedFactura) {
+        await this.clearAllFacturaCache();
+      }
       return { message: "Factura actualizada exitosamente" };
     } catch (err) {
-      if (err instanceof AppError) {
-        return AppError.error("Error de datos en appError", 500);
-      } else {
-        throw err;
-      }
+      console.error("Error en updateFact:", err);
+      throw AppError.error("Error de datos en appError", 500);
+    }
+  }
+
+  async getCacheStats(): Promise<{
+    totalKeys: number;
+    facturaKeys: number;
+    versionKeys: number;
+    countKeys: number;
+  }> {
+    try {
+      return await this.facturaCache.getCacheStats();
+    } catch (err) {
+      console.error("Error al obtener estadísticas del cache:", err);
+      throw AppError.error("Error al obtener estadísticas del cache", 500);
     }
   }
 }

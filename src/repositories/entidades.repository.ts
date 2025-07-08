@@ -43,7 +43,6 @@ export class EntidadesRepository {
   }
 
   async verificationEntidadById({ idEntidad }: { idEntidad: string }) {
-    console.log("ID DE LA ENTIDAD A VERIFICAR", idEntidad);
     return await db.empresa.findUnique({
       where: {
         organizationId: idEntidad,
