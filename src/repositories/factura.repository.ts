@@ -61,7 +61,10 @@ export class FacturaRepository extends BaseRepository implements IFacturas {
   }
 
   async CountFact() {
-    return await db.factura.count();
+    const empresaId = this.getEmpresaId();
+    return await db.factura.count({
+      where: { empresa_id: empresaId },
+    });
   }
   async getFact({
     page = 1,

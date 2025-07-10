@@ -31,9 +31,11 @@ export class GananciasRepository extends BaseRepository implements IGanancias {
     ganancia_total: number;
     id: string;
   }): Promise<void> {
+    const empresaId = this.getEmpresaId();
     await db.profitSummary.update({
       where: {
         id: id,
+        empresa_id: empresaId,
       },
       data: {
         ganancia_total: ganancia_total,
@@ -45,7 +47,7 @@ export class GananciasRepository extends BaseRepository implements IGanancias {
     return db.profitSummary.findMany({
       where: { empresa_id: empresaId },
       orderBy: {
-        id: "desc",
+        createdAt: "desc",
       },
       take: 7,
     });
