@@ -10,6 +10,7 @@ RUN apk update \
 
 # 2. Copiamos credenciales y variables de entorno ANTES de instalar
 COPY maxpollo.json ./
+COPY keys-clerk.json ./
 
 # 3. Cache de dependencias: manifest y lock
 COPY package.json pnpm-lock.yaml tsconfig.json ./

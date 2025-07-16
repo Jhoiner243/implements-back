@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { getAuth } from "@clerk/express";
+import { Request } from "express";
 import { inject, injectable } from "inversify";
 import jwt from "jsonwebtoken";
 import { CLERK_PUBLIC_KEY } from "../config/auth.config";
@@ -127,5 +129,20 @@ export class NotificationsService {
     }
 
     return { message: message };
+  }
+
+  // Verificar si el usuario tiene notificaciones activas
+  async enableNotifications(req: Request): Promise<boolean> {
+    try {
+      const { userId } = getAuth(req);
+      if (!userId) {
+        throw new AppError("Usuario no autenticado", 401);
+      }
+      const notifications =
+        await this.notificationsRepository.enableNotifications({ userId });
+      return notifications;
+    } catch (error: any) {
+      throw new Error(`Error al obtener notificaciones: ${error.message}`);
+    }
   }
 }

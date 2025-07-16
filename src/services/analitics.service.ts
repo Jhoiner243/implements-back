@@ -85,7 +85,7 @@ export class AnaliticsService {
 
     pedidos.forEach((pedido) => {
       const fecha = new Date(pedido.createdAt);
-      const weekKey = format(fecha, "yyyy-'W'ww"); // ej. "2024-W21"
+      const weekKey = format(fecha, "yyyy-'W'ww");
 
       // Inicializar semana si no existe
       if (!weeklyProducts.has(weekKey)) {

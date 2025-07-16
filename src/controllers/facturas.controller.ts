@@ -103,4 +103,48 @@ export class FacturaController implements BaseController {
       return res.status(500).json({ message: "Error de servidor interno" });
     }
   }
+
+  // Cache management endpoints
+  @Delete("/facturas/cache/all")
+  async clearAllCache(@Res() res: Response) {
+    try {
+      await this.facturaService.clearAllFacturaCache();
+      return res
+        .status(200)
+        .json({ message: "Cache de facturas limpiado exitosamente" });
+    } catch (err) {
+      if (err instanceof AppError) {
+        return res.status(err.status).json({ message: err.message });
+      }
+      return res.status(500).json({ message: "Error de servidor interno" });
+    }
+  }
+
+  @Delete("/facturas/cache/:id")
+  async clearFacturaCache(@Param("id") id: string, @Res() res: Response) {
+    try {
+      await this.facturaService.clearFacturaCacheById(id);
+      return res
+        .status(200)
+        .json({ message: "Cache de factura limpiado exitosamente" });
+    } catch (err) {
+      if (err instanceof AppError) {
+        return res.status(err.status).json({ message: err.message });
+      }
+      return res.status(500).json({ message: "Error de servidor interno" });
+    }
+  }
+
+  @Get("/facturas/cache/stats")
+  async getCacheStats(@Res() res: Response) {
+    try {
+      const stats = await this.facturaService.getCacheStats();
+      return res.status(200).json(stats);
+    } catch (err) {
+      if (err instanceof AppError) {
+        return res.status(err.status).json({ message: err.message });
+      }
+      return res.status(500).json({ message: "Error de servidor interno" });
+    }
+  }
 }

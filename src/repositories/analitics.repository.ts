@@ -13,6 +13,7 @@ export class AnaliticsRepository extends BaseRepository implements Analytics {
       where: {
         empresa_id: empresaId,
       },
+      orderBy: { createdAt: "desc" },
       include: { detalles: true },
     });
     const facturas = result.map((factura) => {

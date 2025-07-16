@@ -12,7 +12,7 @@ export class EntidadesRepository {
     //Cuando se crea la entidad se actualiza la empresa para conectarala con el primer usuario que seria el creador de la empresa.
     await db.empresa.update({
       where: {
-        organizationId: data.organizationId,
+        id: entidadId.id,
       },
       data: {
         users: {

@@ -5,7 +5,7 @@ export async function automatizedCron(
   automatizedCronGrowt: AutomatedGrowthIndex
 ) {
   const growt = cron.schedule(
-    "* * * * * *",
+    "1 * * * *",
     async () => {
       await automatizedCronGrowt.cronAutomatedCall();
       growt.stop();
@@ -14,9 +14,9 @@ export async function automatizedCron(
       timezone: "America/Bogota",
     }
   );
-
+  //Enviar notificacion de ganancias al final del día
   const messaging = cron.schedule(
-    "* * * * * *",
+    "1 * * * *",
     async () => {
       await automatizedCronGrowt.messagingProfitTotal();
       console.log("Se usa");

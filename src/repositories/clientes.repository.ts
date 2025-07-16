@@ -39,14 +39,22 @@ export class ClientesRepository extends BaseRepository implements IClientes {
     });
   }
 
-  async getAllClient(): Promise<ClienteEntity[]> {
+  async getAllClient(limit = 10, page = 1): Promise<ClienteEntity[]> {
     const empresaId = this.getEmpresaId();
+    const skip = (page - 1) * limit;
     const clientes = await db.clientes.findMany({
       where: {
-        empresa_id: empresaId ?? "",
+        empresa_id: empresaId,
       },
+      skip,
+      take: limit,
     });
     return clientes;
+  }
+
+  async countAllClient(): Promise<number> {
+    const empresaId = this.getEmpresaId();
+    return db.clientes.count({ where: { empresa_id: empresaId } });
   }
 
   async deleteClient(id_cliente: string) {

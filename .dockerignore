@@ -7,4 +7,5 @@
 !/tsconfig.json
 !/tsconfig.build.json
 !/src
+!/keys-clerk.json
 !/prisma

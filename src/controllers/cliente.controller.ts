@@ -86,8 +86,8 @@ export class ClienteController implements BaseController {
   @Get("/clientes")
   async getAllClient(@Res() res: Response) {
     try {
-      const clientes = await this.clienteService.getAllClient();
-      return res.status(200).json(clientes);
+      const result = await this.clienteService.getAllClient();
+      return res.status(200).json(result);
     } catch {
       return res.status(500).json("Error de servidor interno");
     }

@@ -2,6 +2,7 @@ import { Container } from "inversify";
 import { analiticsBinding } from "./bindings/analitics.binding";
 import { appBinding } from "./bindings/app.binding";
 import { authBinding } from "./bindings/auth.binding";
+import { cacheBinding } from "./bindings/cache.binding";
 import { clientesBinding } from "./bindings/clientes.binding";
 import { entidadesBinding } from "./bindings/entidades.binding";
 import { facturasBindig } from "./bindings/facturas.binding";
@@ -23,5 +24,6 @@ appContainer.load(
   analiticsBinding,
   authBinding,
   mcpBinding,
+  cacheBinding,
   appBinding
 );

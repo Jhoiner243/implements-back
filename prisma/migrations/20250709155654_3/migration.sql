@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "DetalleFactura" ALTER COLUMN "cantidad" SET DATA TYPE DOUBLE PRECISION;

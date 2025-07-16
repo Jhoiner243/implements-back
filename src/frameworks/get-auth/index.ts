@@ -20,7 +20,6 @@ export class HasPermission {
           next();
           return;
         }
-        console.log("Falta userId o sessionId");
         return res.status(403).json("Forbidden");
       }
 
@@ -31,19 +30,17 @@ export class HasPermission {
 
       // Permitir si es evento de eliminación webhook de Clerk
       if (req.body?.object && req.body?.data?.deleted === true) {
-        console.log("Evento de eliminación de Clerk");
         return next();
       }
 
       // Verificar rol en la organización
       const hasPerm = has?.({ role: "org:admin" });
+      const hasPermMember = has({ role: "org:member" });
 
-      if (!hasPerm) {
-        console.log("No tiene permisos suficientes");
+      if (!hasPerm && !hasPermMember) {
         return res.status(403).json("Forbidden");
       }
 
-      console.log("Autorizado. ORGID:", orgId);
       // Inyectar orgId en contexto y continuar
       withRequestId(orgId, next);
     } catch (error) {

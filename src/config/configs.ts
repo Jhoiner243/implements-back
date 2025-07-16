@@ -10,4 +10,6 @@ export const {
   COOKIE_SAME_SITE = "strict",
   COOKIE_MAX_AGE = 1000 * 60 * 60 * 24 * 7,
   COOKIE_SECURE = true,
+  REDIS_HOST,
+  REDIS_PORT,
 } = process.env;

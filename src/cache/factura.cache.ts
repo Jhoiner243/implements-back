@@ -143,16 +143,14 @@ export class FacturaCacheService {
   }
 
   // Métodos de limpieza y stats
-  async clearAllFacturaCache(): Promise<{ message: string }> {
+  async clearAllFacturaCache(): Promise<void> {
     const tenantPrefix = this.getTenantPrefix();
     await this.redisClient.delPattern(`${tenantPrefix}:*`);
     await this.redisClient.delPattern(`version:${tenantPrefix}:*`);
-    return { message: "Cache de facturas limpiado exitosamente" };
   }
 
-  async clearFacturaCacheById(id: string): Promise<{ message: string }> {
+  async clearFacturaCacheById(id: string): Promise<void> {
     await this.invalidateFacturaCache(id);
-    return { message: "Cache de factura limpiado exitosamente" };
   }
 
   async clearCacheByStatus(

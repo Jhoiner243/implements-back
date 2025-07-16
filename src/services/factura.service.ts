@@ -17,18 +17,18 @@ export class FacturaService {
     private facturaCache: FacturaCacheService
   ) {}
 
-  async clearAllFacturaCache(): Promise<{ message: string }> {
+  async clearAllFacturaCache(): Promise<void> {
     try {
-      return await this.facturaCache.clearAllFacturaCache();
+      await this.facturaCache.clearAllFacturaCache();
     } catch (err) {
       console.error("Error al limpiar cache:", err);
       throw AppError.error("Error al limpiar el cache", 500);
     }
   }
 
-  async clearFacturaCacheById(id: string): Promise<{ message: string }> {
+  async clearFacturaCacheById(id: string): Promise<void> {
     try {
-      return await this.facturaCache.clearFacturaCacheById(id);
+      await this.facturaCache.clearFacturaCacheById(id);
     } catch (err) {
       console.error("Error al limpiar cache de factura:", err);
       throw AppError.error("Error al limpiar el cache de la factura", 500);
@@ -219,6 +219,7 @@ export class FacturaService {
       const updatedFactura = await this.facturaRepository.updateFact(id, data);
       if (updatedFactura) {
         await this.clearAllFacturaCache();
+        await this.facturaCache.clearFacturaCacheById(updatedFactura.id);
       }
       return { message: "Factura actualizada exitosamente" };
     } catch (err) {

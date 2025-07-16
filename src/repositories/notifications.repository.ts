@@ -76,4 +76,20 @@ export class NotificationsRepository
 
     return { message: "Notificación eliminada" };
   }
+
+  async enableNotifications({ userId }: { userId: string }): Promise<boolean> {
+    const notifications = await db.user.findMany({
+      where: {
+        id: userId,
+      },
+      select: {
+        token: true,
+      },
+    });
+
+    if (notifications === null) {
+      return false;
+    }
+    return true;
+  }
 }

@@ -69,4 +69,16 @@ export class NotificationsController implements BaseController {
       return res.status(500).json({ error: "Error de servidor interno" });
     }
   }
+
+  @Get("/notifications-enable")
+  async enableNotifications(@Req() req: Request, @Res() res: Response) {
+    try {
+      const notifications = await this.notificationsService.enableNotifications(
+        req
+      );
+      return res.status(200).json({ notifications });
+    } catch (error: any) {
+      return res.status(500).json({ error: error.message });
+    }
+  }
 }

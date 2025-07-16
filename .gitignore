@@ -7,3 +7,4 @@ pnpm-loack.yaml
 /docker-compose.postgres.yml
 .env.prod
 .env.override
+/keys-clerk.json
