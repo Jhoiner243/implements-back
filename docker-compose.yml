@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   postgres_db:
     image: postgres:16
@@ -8,6 +10,8 @@ services:
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: prisma
+    ports:
+      - "5432:5432"
     networks:
       - prisma-network
     healthcheck:
@@ -15,6 +19,8 @@ services:
       interval: 5s
       timeout: 2s
       retries: 20
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
   server:
     build:
@@ -25,10 +31,18 @@ services:
     stdin_open: true
     tty: true
     env_file:
-      - .env
+      - .env.production
+    depends_on:
+      postgres_db:
+        condition: service_healthy
     networks:
       - prisma-network
 
 networks:
   prisma-network:
     name: prisma-network
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local

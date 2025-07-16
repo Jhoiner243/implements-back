@@ -1,6 +1,5 @@
 *
-!./env
-!/.env.prod
+!/.env.production
 !/package.json
 !/pnpm-lock.yaml
 !/maxpollo.json

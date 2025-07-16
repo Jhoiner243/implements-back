@@ -46,7 +46,7 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/maxpollo.json ./maxpollo.json
 
-EXPOSE 3003
+EXPOSE 3000
 
 # 9. ENTRYPOINT y CMD para migraciones y arranque
 ENTRYPOINT ["dumb-init", "--"]
