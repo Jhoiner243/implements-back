@@ -8,3 +8,7 @@ pnpm-loack.yaml
 .env.prod
 .env.override
 /keys-clerk.json
+.env.production
+deploy_key
+deploy_key.pub
+fill-backend.pem
