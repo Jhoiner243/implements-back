@@ -1,7 +1,6 @@
 import { injectable } from "inversify";
 import { UserEntity } from "../entities/user.entity";
 import { db } from "../frameworks/db/db";
-import { LoginDTO } from "../ts/dtos/LoginDTO";
 import { RegisterDTO } from "../ts/dtos/RegisterDTO";
 import { IAuth } from "../ts/interfaces/auth.interface";
 
@@ -23,17 +22,6 @@ export class AuthRepository implements IAuth {
       throw new Error("Error registering user");
     }
     return { message: "User registered", userId: registerUser.id };
-  }
-  async loginUser(user: LoginDTO): Promise<{ message: string }> {
-    const loginUser = await db.user.findFirst({
-      where: {
-        email: user.user_email,
-      },
-    });
-    if (!loginUser) {
-      throw new Error("Error logging in user");
-    }
-    return { message: "User logged in" };
   }
 
   async authenticateUser(userId: string): Promise<{ message: boolean }> {
