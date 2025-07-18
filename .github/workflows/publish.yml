@@ -83,7 +83,7 @@ jobs:
               --name implements-back \
               -p 3000:3000 \
               --restart always \
-              --env-file /home/ubuntu/project-folder/.env.production \
+              -v /home/ubuntu/project-folder/.env.production:/app/.env \
               ghcr.io/jhoiner243/implements-back:latest
 
           EOF
