@@ -71,10 +71,10 @@ jobs:
 
       - name: Deploy via SSH to EC2
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
             cd /home/ubuntu/project-folder
-            git pull origin main
+            docker login -u jhoinermartinez243 -p ${{ secrets.TOKEN_CD }}
+            docker pull ghcr.io/jhoiner243/implements-back:latest
             docker compose down
-            docker compose pull
-            docker compose up -d --build
+            docker compose -f docker-compose.yml up -d
           EOF
