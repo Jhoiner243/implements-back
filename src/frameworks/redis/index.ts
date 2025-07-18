@@ -1,6 +1,6 @@
 import { injectable } from "inversify";
 import Redis from "ioredis";
-import { REDIS_HOST, REDIS_PORT } from "../../config/configs";
+import { REDIS_URL } from "../../config/configs";
 
 export interface IRedisClient {
   get(key: string): Promise<string | null>;
@@ -22,10 +22,7 @@ export interface IRedisClient {
 export class RedisClient implements IRedisClient {
   private client: Redis;
   constructor() {
-    this.client = new Redis({
-      host: REDIS_HOST,
-      port: Number(REDIS_PORT),
-    });
+    this.client = new Redis(REDIS_URL as string);
   }
 
   async get(key: string): Promise<string | null> {
