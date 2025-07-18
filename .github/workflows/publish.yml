@@ -84,7 +84,7 @@ jobs:
               -p 3000:3000 \
               --restart always \
               -v /home/ubuntu/project-folder/.env.production:/app/.env \
-              --env-file /home/ubuntu/project-folder/.env.production \
+              --env-file .env \
               ghcr.io/jhoiner243/implements-back:latest
 
           EOF
