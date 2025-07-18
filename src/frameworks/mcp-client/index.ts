@@ -21,16 +21,11 @@ import { ChatMessage, funcionCall } from "./type";
 dotenv.config();
 
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
-const PATH_TO_SERVER = process.env.PATH_TO_SERVER;
 
 if (!GOOGLE_API_KEY) {
   throw new Error("GOOGLE_API_KEY no está definida en el .env");
 }
-if (!PATH_TO_SERVER) {
-  throw new Error(
-    "PATH_TO_SERVER (ruta al script del servidor) no está definida en el .env"
-  );
-}
+
 @injectable()
 export class MCPClient extends BaseRepository {
   private mcp: McpClientSdk;
