@@ -3,170 +3,157 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
 }
 
 model User {
-  id            String             @id @default(uuid())
-  clerkId       String             @unique 
-  email         String             @unique
+  id            String            @id @default(uuid())
+  clerkId       String            @unique
+  email         String            @unique
   name          String
   lastname      String
   token         String?
-  favoritos     ProductFavorite[]
+  empresa_id    String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
   prompts       AiQuery[]
   notifications Notification[]
-  empresa_id     String?
-  empresa       Empresa?           @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
-
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  favoritos     ProductFavorite[]
+  empresa       Empresa?          @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
 }
-
-
 
 model Clientes {
   id         String    @id @default(uuid())
-  idCliente  Int               @default(autoincrement())
-  pedidos    Factura[]
+  idCliente  Int       @default(autoincrement())
   name       String
   email      String
   phone      String
   address    String
   empresa_id String
-empresa   Empresa   @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
-
-  updatedAt DateTime  @updatedAt
+  updatedAt  DateTime  @updatedAt
   createdAt  DateTime  @default(now())
-
+  empresa    Empresa   @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
+  pedidos    Factura[]
 }
 
 model Factura {
-  id          String           @id @default(uuid())
+  id         String           @id @default(uuid())
   idFactura  Int              @default(autoincrement())
-  clienteId   String           @map("id_cliente")
-  cliente     Clientes         @relation(fields: [clienteId], references: [id], onUpdate: Cascade)
-  detalles    DetalleFactura[]
-  emailLogs   EmailLog[]       @relation("FacturaEmailLogs")
-  status      StatusFactura    @default(Pendiente)
-  total       Float
+  clienteId  String           @map("id_cliente")
+  status     StatusFactura    @default(Pendiente)
+  total      Float
   empresa_id String
-empresa   Empresa   @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
-
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  detalles   DetalleFactura[]
+  emailLogs  EmailLog[]       @relation("FacturaEmailLogs")
+  empresa    Empresa          @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
+  cliente    Clientes         @relation(fields: [clienteId], references: [id])
 
   @@index([status])
 }
 
 model DetalleFactura {
-  id          String     @id @default(uuid())
-  facturaId   String
-  factura     Factura    @relation(fields: [facturaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  productoId  String
-  producto    Productos  @relation(fields: [productoId], references: [id], onUpdate: Cascade)
-  cantidad    Float
-  precio      Float
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id         String    @id @default(uuid())
+  facturaId  String
+  productoId String
+  cantidad   Float
+  precio     Float
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  factura    Factura   @relation(fields: [facturaId], references: [id], onDelete: Cascade)
+  producto   Productos @relation(fields: [productoId], references: [id])
 }
 
 model Productos {
-  id                 String            @id @default(uuid())
-  idProducto         Int               @default(autoincrement())
-  nombre             String
-  precio_compra      Float
-  stock              Int               @default(0)
-  favoritosProducto  ProductFavorite[]
-  detalles           DetalleFactura[]
-  categoryId         String
-  avaliable          Boolean @default(true)
-  category           Category          @relation(fields: [categoryId], references: [id], onUpdate: Cascade)
-  stockHistory       StockHistory[]
-  empresa_id String
-  empresa   Empresa   @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
-
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
+  id                String            @id @default(uuid())
+  idProducto        Int               @default(autoincrement())
+  nombre            String
+  precio_compra     Float
+  stock             Int               @default(0)
+  categoryId        String
+  avaliable         Boolean           @default(true)
+  empresa_id        String
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  detalles          DetalleFactura[]
+  favoritosProducto ProductFavorite[]
+  category          Category          @relation(fields: [categoryId], references: [id])
+  empresa           Empresa           @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
+  stockHistory      StockHistory[]
 }
 
 model Category {
   id         String      @id @default(uuid())
-  idCategory Int @default(autoincrement())
+  idCategory Int         @default(autoincrement())
   name       String
-  products   Productos[]
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
   empresa_id String
-  empresa   Empresa   @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
-
+  empresa    Empresa     @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
+  products   Productos[]
 }
 
 model ProductFavorite {
-  id         String      @id @default(uuid())
+  id         String    @id @default(uuid())
   userId     String
-  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   productId  String
-  product    Productos   @relation(fields: [productId], references: [id], onUpdate: Cascade)
-  empresa_id  String
-  empresa    Empresa     @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  empresa_id String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  empresa    Empresa   @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
+  product    Productos @relation(fields: [productId], references: [id])
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
-
 
 model AiQuery {
-  id         String     @id @default(uuid())
+  id         String   @id @default(uuid())
   userId     String
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  empresa_id  String
-  empresa    Empresa    @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
+  empresa_id String
   query      String
   response   String
-  createdAt  DateTime   @default(now())
+  createdAt  DateTime @default(now())
+  empresa    Empresa  @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-
 model Notification {
-  id         String     @id @default(uuid())
+  id         String   @id @default(uuid())
   userId     String
-  user       User       @relation(fields: [userId], references: [id], onUpdate: Cascade)
-  empresa_id  String
-  empresa    Empresa    @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
+  empresa_id String
   message    String
-  is_read    Boolean    @default(false)
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  is_read    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  empresa    Empresa  @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id])
 }
 
 model Token {
-  id         String     @id @default(uuid())
+  id         String   @id @default(uuid())
   userId     String
-  empresa_id  String
-  empresa    Empresa     @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
+  empresa_id String
   token      String
-  createdAt  DateTime   @default(now())
+  createdAt  DateTime @default(now())
+  empresa    Empresa  @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
 }
 
-
 model StockHistory {
-  id          String     @id @default(uuid())
-  productoId  String
-  producto    Productos  @relation(fields: [productoId], references: [id], onUpdate: Cascade)
-  cantidad    Int
-  motivo      String?
-  createdAt   DateTime   @default(now())
+  id         String    @id @default(uuid())
+  productoId String
+  cantidad   Int
+  motivo     String?
+  createdAt  DateTime  @default(now())
+  producto   Productos @relation(fields: [productoId], references: [id])
 }
 
 model Roles {
-  id        String      @id @default(uuid())
-  name      Role        @default(USER)
+  id         String  @id @default(uuid())
+  name       Role    @default(USER)
   empresa_id String
-  empresa   Empresa     @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
+  empresa    Empresa @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
 }
-
 
 model ProfitSummary {
   id             String      @id @default(uuid())
@@ -174,35 +161,33 @@ model ProfitSummary {
   fecha_fin      DateTime
   ganancia_total Float
   tipo_periodo   TipoPeriodo
-  empresa_id      String
-  empresa        Empresa     @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
+  empresa_id     String
   createdAt      DateTime    @default(now())
+  empresa        Empresa     @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
 }
-
 
 model GrowtRate {
-  id String @id @default(uuid())
-  porcentaje Float
-  fechaActual String
+  id            String      @id @default(uuid())
+  porcentaje    Float
+  fechaActual   String
   fechaAnterior String
-  tipoPeriodo TipoPeriodo
-  empresa_id String
-empresa   Empresa   @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
-
+  tipoPeriodo   TipoPeriodo
+  empresa_id    String
+  empresa       Empresa     @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
 }
+
 model EmailLog {
-  id         String     @id @default(uuid())
+  id         String      @id @default(uuid())
   facturaId  String
-  factura    Factura    @relation("FacturaEmailLogs", fields: [facturaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  empresa_id  String
-  empresa    Empresa    @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
+  empresa_id String
   status     StatusEmail
+  empresa    Empresa     @relation(fields: [empresa_id], references: [organizationId], onDelete: Cascade)
+  factura    Factura     @relation("FacturaEmailLogs", fields: [facturaId], references: [id], onDelete: Cascade)
 }
-
 
 model Empresa {
   id              String            @id @default(uuid())
-  organizationId  String @unique
+  organizationId  String            @unique
   nombre          String
   typePlan        typePlan
   billingCycle    BillingCycle
@@ -211,21 +196,21 @@ model Empresa {
   contactPhone    BigInt
   industry        String
   createBy        String
-  users           User[] 
-  productos       Productos[]
-  clientes        Clientes[]
-  facturas        Factura[]
-  categorias      Category[]
-  growtRate       GrowtRate[]
-  aiQueries       AiQuery[]
-  favorites       ProductFavorite[]
-  notifications   Notification[]
-  tokens          Token[]
-  roles           Roles[]
-  profitSummaries ProfitSummary[]
-  emailLogs       EmailLog[]
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
+  aiQueries       AiQuery[]
+  categorias      Category[]
+  clientes        Clientes[]
+  emailLogs       EmailLog[]
+  facturas        Factura[]
+  growtRate       GrowtRate[]
+  notifications   Notification[]
+  favorites       ProductFavorite[]
+  productos       Productos[]
+  profitSummaries ProfitSummary[]
+  roles           Roles[]
+  tokens          Token[]
+  users           User[]
 }
 
 enum typePlan {
@@ -239,7 +224,6 @@ enum BillingCycle {
   Anual
   Quincenal
 }
-
 
 enum TipoPeriodo {
   Diario
