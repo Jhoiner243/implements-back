@@ -74,6 +74,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             cd /home/ubuntu/project-folder
             docker login ghcr.io -u jhoinermartinez243 -p ${{ secrets.TOKEN_CD }}
+            docker rmi ghcr.io/jhoiner243/implements-back:latest || true
             docker pull ghcr.io/jhoiner243/implements-back:latest
             
             docker stop implements-back || true
