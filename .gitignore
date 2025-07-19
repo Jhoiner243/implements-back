@@ -12,3 +12,5 @@ pnpm-loack.yaml
 deploy_key
 deploy_key.pub
 fill-backend.pem
+docker-compose-dev.yml
+server.js
