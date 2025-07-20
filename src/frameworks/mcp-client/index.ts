@@ -153,7 +153,7 @@ export class MCPClient extends BaseRepository {
     const toolCallNames: funcionCall[] = [];
 
     const response = await this.llm.models.generateContent({
-      model: "gemini-2.5-flash-preview-04-17",
+      model: "models/gemini-2.5-flash",
       contents: query,
       config: config,
     });
@@ -198,7 +198,7 @@ export class MCPClient extends BaseRepository {
     // Helper interno para llamar a la LLM con tool calling siempre
     const callLLM = async (history: Content[]) => {
       return this.llm.models.generateContent({
-        model: "gemini-2.5-flash-preview-04-17",
+        model: "models/gemini-2.5-flash",
         contents: history,
         config,
       });
