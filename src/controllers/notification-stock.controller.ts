@@ -37,7 +37,6 @@ export class NotificationsController implements BaseController {
   async ActiveSendNotifications(@Req() req: Request, @Res() res: Response) {
     try {
       const tokenJwt: any = req.cookies.__session;
-      console.log(tokenJwt);
       if (tokenJwt === undefined) {
         return res.status(401).json({ error: "Access token is missing" });
       }

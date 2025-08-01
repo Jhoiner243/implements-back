@@ -58,9 +58,7 @@ export class ProductoRepository extends BaseRepository implements IProductos {
   ): Promise<{ message: string }> {
     try {
       const empresaId = this.getEmpresaId();
-      console.log("Empresa ID:", empresaId);
 
-      console.log("Datos de la categoría:", data);
       await db.category.create({
         data: {
           empresa_id: empresaId,

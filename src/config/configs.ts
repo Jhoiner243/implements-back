@@ -11,4 +11,8 @@ export const {
   COOKIE_MAX_AGE = 1000 * 60 * 60 * 24 * 7,
   COOKIE_SECURE = true,
   REDIS_URL,
+  CORREO_FACTUS,
+  CONTRASENA,
+  CLIENT_ID_FACTUS,
+  CLIENT_SECRET_FACTUS,
 } = process.env;

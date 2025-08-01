@@ -10,4 +10,4 @@ services:
     stdin_open: true
     tty: true
     env_file:
-      - /home/ubuntu/project-folder/.env.production
+      - .env

@@ -2,6 +2,7 @@ import { inject, injectable } from "inversify";
 import { FacturaCacheService } from "../cache/factura.cache";
 import { TYPESCACHE } from "../containers/bindings/cache.binding";
 import { FacturaSeccion, FacturasEntity } from "../entities/facturas.entity";
+import { SubmitDianFactus } from "../frameworks/factus-dian";
 import { FacturaRepository } from "../repositories/factura.repository";
 import { PanginationDto } from "../ts/dtos/paginationDto";
 import { FacturasEntitySchema } from "../ts/validations/factura.validations";
@@ -14,7 +15,8 @@ export class FacturaService {
     @inject(FacturaRepository) private facturaRepository: FacturaRepository,
     @inject(DiaryProfit) private diaryProfit: DiaryProfit,
     @inject(TYPESCACHE.FacturaCacheService)
-    private facturaCache: FacturaCacheService
+    private facturaCache: FacturaCacheService,
+    @inject(SubmitDianFactus) private submitDian: SubmitDianFactus
   ) {}
 
   async clearAllFacturaCache(): Promise<void> {
@@ -47,7 +49,30 @@ export class FacturaService {
         })),
       };
 
-      await this.facturaRepository.dataFact(facturaWithCreatedAt);
+      const facturaCreada = await this.facturaRepository.dataFact(
+        facturaWithCreatedAt
+      );
+
+      //Envío de factura a Dian
+      await this.submitDian.dataAdapterForSubmitToFactus({
+        company: facturaCreada.empresa,
+        facturaAdapter: {
+          factura: facturaCreada,
+          items: facturaCreada.detalles.map((detalle) => ({
+            id: detalle.id,
+            facturaId: detalle.facturaId,
+            nombre: detalle.producto.nombre,
+            cantidad: detalle.cantidad,
+            precio_compra: detalle.precio,
+            precio: detalle.precio,
+            productoId: detalle.producto.id,
+            id_producto: detalle.id,
+            createdAt: detalle.createdAt,
+            updatedAt: detalle.updatedAt,
+          })),
+          customer: facturaCreada.cliente,
+        },
+      });
 
       const diary = facturaWithCreatedAt.detalles.map((detalle) => ({
         precio_venta: detalle.precio_venta,

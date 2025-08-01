@@ -19,7 +19,6 @@ export async function automatizedCron(
     "1 * * * *",
     async () => {
       await automatizedCronGrowt.messagingProfitTotal();
-      console.log("Se usa");
       messaging.stop();
     },
     {

@@ -11,7 +11,6 @@ export function withRequestId(
   requestId: string,
   callback: () => void | Promise<void>
 ): void {
-  console.log("withRequestId", requestId);
   const context: RequestContext = { empresaId: requestId };
   prismaContext.run(context, callback);
 }

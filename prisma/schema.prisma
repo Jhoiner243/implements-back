@@ -26,6 +26,7 @@ model User {
 model Clientes {
   id         String    @id @default(uuid())
   idCliente  Int       @default(autoincrement())
+  identification String
   name       String
   email      String
   phone      String
@@ -43,8 +44,10 @@ model Factura {
   clienteId  String           @map("id_cliente")
   status     StatusFactura    @default(Pendiente)
   total      Float
+  number     String ?
   empresa_id String
   createdAt  DateTime         @default(now())
+  qr         String ?
   updatedAt  DateTime         @updatedAt
   detalles   DetalleFactura[]
   emailLogs  EmailLog[]       @relation("FacturaEmailLogs")

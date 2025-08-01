@@ -12,7 +12,6 @@ export class JwtAuth {
         return res.status(401).json({ error: "Not signed in" });
       }
 
-      console.log("IS VALID", userId);
       if (!sessionId) {
         return res.status(401).json({ error: "Invalid or expired token" });
       }

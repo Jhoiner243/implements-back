@@ -1,12 +1,23 @@
 import { Request, Response } from "express";
 import { inject } from "inversify";
-import { Delete, JsonController, Post, Req, Res } from "routing-controllers";
+import {
+  Delete,
+  Get,
+  JsonController,
+  Post,
+  Req,
+  Res,
+} from "routing-controllers";
+import { AuthFactusApi } from "../frameworks/factus-dian/auth";
 import { AuthService } from "../services/auth.service";
 import { AppError } from "../utils/errors/app-errors";
 
 @JsonController()
 export class AuthController {
-  constructor(@inject(AuthService) private authService: AuthService) {}
+  constructor(
+    @inject(AuthFactusApi) private factusAuth: AuthFactusApi,
+    @inject(AuthService) private authService: AuthService
+  ) {}
 
   //Obtenemos los datos del usuario cuando se registre o inicie sesion por primera vez
   @Post("/register")
@@ -48,5 +59,14 @@ export class AuthController {
     if (!id) return;
 
     await this.authService.deleteAccount(id);
+  }
+
+  @Get("/credentials")
+  async credentialAccess() {
+    const { access_token, refresh_token } = await this.factusAuth.auth();
+    return {
+      access_token_factus: access_token,
+      refresh_token_factus: refresh_token,
+    };
   }
 }

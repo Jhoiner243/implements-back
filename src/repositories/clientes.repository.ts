@@ -13,6 +13,7 @@ export class ClientesRepository extends BaseRepository implements IClientes {
 
     const clienteCreate = await db.clientes.create({
       data: {
+        identification: data.identification,
         empresa_id: empresaId,
         name: data.name,
         email: data.email,

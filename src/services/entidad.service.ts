@@ -169,7 +169,6 @@ export class EntidadService {
         idEntidad,
       });
 
-      console.log("Entidad encontrada:", entidad);
       if (!entidad) {
         throw new AppError("Entidad no encontrada", 404);
       }

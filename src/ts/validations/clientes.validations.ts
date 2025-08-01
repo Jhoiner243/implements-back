@@ -1,6 +1,7 @@
 import z from "zod";
 
 export const ClienteSchema = z.object({
+  identification: z.string().min(10).max(10, "Minimo y maxímo 10 caracteres"),
   name: z.string().min(3, "Error minimo 3 caracteres"),
   email: z.string().email(),
   phone: z.string().min(10, "Minimo 10 caracteres de número").max(10, "Error "),

@@ -13,6 +13,7 @@ export interface DetallesFacturasEntity {
 
 export interface FacturaSeccion extends FacturasEntity {
   updatedAt: Date;
+  qr: string;
   status: StatusFactura;
   idFactura: number;
 }

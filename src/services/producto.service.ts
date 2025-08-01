@@ -39,7 +39,6 @@ export class ProductoService {
     data: Partial<ProductoEntity>;
     id: string;
   }) {
-    console.log("Precio_compra", data.precio_compra);
     // Transformamos los campos numéricos si vienen como string
     const parsedData = {
       ...data,

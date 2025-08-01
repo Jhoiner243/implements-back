@@ -14,45 +14,65 @@ import { BaseRepository } from "../utils/tenant-id";
 
 @injectable()
 export class FacturaRepository extends BaseRepository implements IFacturas {
-  async dataFact(data: FacturasEntity): Promise<void> {
+  async updateQrImage({ qr, id, number }: {number: string, qr: string; id: string }) {
+    await db.factura.update({
+      where: {
+        id: id,
+      },
+      data: {
+        number,
+        qr,
+      },
+    });
+  }
+
+  async dataFact(data: FacturasEntity) {
     const empresaId = this.getEmpresaId();
 
-    let facturaCreada;
     try {
-      facturaCreada = await db.$transaction(async (tx) => {
-        // 1) Crear factura con detalles
-        const factura = await tx.factura.create({
-          data: {
-            empresa_id: empresaId,
-            clienteId: data.id_cliente,
-            total: data.total,
-            detalles: {
-              create: (data.detalles ?? []).map(
-                (d: DetallesFacturasEntity) => ({
-                  productoId: d.id_producto,
-                  cantidad: d.cantidad,
-                  precio: d.precio_venta,
-                })
-              ),
+      // 1) Crear factura con detalles
+      const facturaCreada = await db.factura.create({
+        data: {
+          empresa_id: empresaId,
+          clienteId: data.id_cliente,
+          total: data.total,
+          detalles: {
+            create: (data.detalles ?? []).map((d: DetallesFacturasEntity) => ({
+              productoId: d.id_producto,
+              cantidad: d.cantidad,
+              precio: d.precio_venta,
+            })),
+          },
+        },
+        include: {
+          detalles: {
+            include: {
+              producto: {
+                select: {
+                  nombre: true,
+                  id: true,
+                },
+              },
             },
           },
-        });
-
-        // 2) Actualizar stock de cada producto
-        for (const d of data.detalles ?? []) {
-          await tx.productos.update({
-            where: { id: d.id_producto },
-            data: { stock: { decrement: d.cantidad } },
-          });
-        }
-
-        return factura;
+          cliente: true,
+          empresa: true,
+        },
       });
+
+      // 2) Actualizar stock de cada producto
+      for (const d of data.detalles ?? []) {
+        await db.productos.update({
+          where: { id: d.id_producto },
+          data: { stock: { decrement: d.cantidad } },
+        });
+      }
 
       // 3) Invalidar la caché una vez confirmada la transacción
 
       // 4) Enviar correo
       await emailFacts(facturaCreada.id);
+      return facturaCreada;
     } catch (err) {
       // Manejo de error: log, rethrow o enviar respuesta de error
       console.error("Error al procesar factura:", err);
@@ -85,6 +105,7 @@ export class FacturaRepository extends BaseRepository implements IFacturas {
       id_cliente: factura.cliente.name,
       total: factura.total,
       detalles: [],
+      qr: factura.qr ?? "",
       status: factura.status as StatusFactura,
       createdAt: factura.createdAt,
       updatedAt: factura.updatedAt,
@@ -110,6 +131,7 @@ export class FacturaRepository extends BaseRepository implements IFacturas {
       id_cliente: factura.cliente?.name ?? "Unknown",
       total: factura.total,
       detalles: [],
+      qr: factura.qr ?? "",
       status: factura.status as StatusFactura,
       createdAt: factura.createdAt,
       updatedAt: factura.updatedAt,

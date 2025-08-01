@@ -56,9 +56,7 @@ export class EntidadController {
       const {
         data: { id },
       } = event;
-      console.log("BODY", req.body);
 
-      console.log("EVENTO", event);
       const { message } = await this.entidadService.deleteOrganization({
         idEntidad: id,
       });

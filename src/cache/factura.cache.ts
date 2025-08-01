@@ -57,7 +57,6 @@ export class FacturaCacheService {
   getVersionCacheKey(status?: StatusFactura): string {
     const tenantPrefix = this.getTenantPrefix();
     const normStatus = normalizeStatus(status);
-    console.log("normStatus", normStatus);
     return `version:${tenantPrefix}:${normStatus}`;
   }
 
@@ -85,9 +84,7 @@ export class FacturaCacheService {
     version?: number
   ): Promise<T | null> {
     const cacheKey = this.getFacturasListCacheKey(status, limit, page, version);
-    console.log("cacheKey", cacheKey);
     const cachedValue = await this.redisClient.get(cacheKey);
-    console.log("cachedValue", cachedValue);
     return cachedValue ? (JSON.parse(cachedValue) as T) : null;
   }
 
@@ -104,7 +101,6 @@ export class FacturaCacheService {
 
   async invalidateListCache(status?: StatusFactura): Promise<void> {
     const key = this.getVersionCacheKey(status);
-    console.log("Incrementando versión de cache para:", key);
     await this.redisClient.incr(key);
   }
 
@@ -137,7 +133,6 @@ export class FacturaCacheService {
   // Métodos de versionado
   async getCurrentVersion(status?: StatusFactura): Promise<number> {
     const key = this.getVersionCacheKey(status);
-    console.log("key", key);
     const value = await this.redisClient.get(key);
     return value ? parseInt(value, 10) : 0;
   }
