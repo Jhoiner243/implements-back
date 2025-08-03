@@ -9,6 +9,7 @@ import { ClienteController } from "../../controllers/cliente.controller";
 import { EntidadController } from "../../controllers/entidad.controller";
 import { FacturaController } from "../../controllers/facturas.controller";
 import { GananciasController } from "../../controllers/ganancias.controller";
+import { ImagesController } from "../../controllers/image.controller";
 import { McpController } from "../../controllers/mcp.controller";
 import { NotificationsController } from "../../controllers/notification-stock.controller";
 import { ProductoController } from "../../controllers/producto.controller";
@@ -47,6 +48,7 @@ export class RoutesSetup {
         AnaliticsController,
         AuthController,
         McpController,
+        ImagesController,
         GananciasController,
         EntidadController,
       ],

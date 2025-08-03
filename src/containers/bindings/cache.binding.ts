@@ -17,4 +17,5 @@ export const cacheBinding = new ContainerModule((bind: interfaces.Bind) => {
   bind<ClienteCacheService>(TYPESCACHE.ClienteCacheService)
     .to(ClienteCacheService)
     .inSingletonScope();
+  bind(RedisClient).toSelf();
 });

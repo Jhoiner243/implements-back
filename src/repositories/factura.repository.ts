@@ -12,9 +12,35 @@ import { IFacturas } from "../ts/interfaces/facturas.interface";
 import { emailFacts } from "../utils/helpers/email-facts";
 import { BaseRepository } from "../utils/tenant-id";
 
+// Interfaz para la respuesta de Gemini AI
+interface GeminiResponse {
+  fecha?: string | null;
+  numeroFactura?: string | null;
+  total: number;
+  productos: Array<{
+    nombre: string;
+    cantidad: number;
+    precio: number;
+  }>;
+  cliente?: {
+    nombre?: string | null;
+    email?: string | null;
+    telefono?: string | null;
+    direccion?: string | null;
+  };
+}
+
 @injectable()
 export class FacturaRepository extends BaseRepository implements IFacturas {
-  async updateQrImage({ qr, id, number }: {number: string, qr: string; id: string }) {
+  async updateQrImage({
+    qr,
+    id,
+    number,
+  }: {
+    number: string;
+    qr: string;
+    id: string;
+  }) {
     await db.factura.update({
       where: {
         id: id,
@@ -28,7 +54,6 @@ export class FacturaRepository extends BaseRepository implements IFacturas {
 
   async dataFact(data: FacturasEntity) {
     const empresaId = this.getEmpresaId();
-
     try {
       // 1) Crear factura con detalles
       const facturaCreada = await db.factura.create({
@@ -197,5 +222,232 @@ export class FacturaRepository extends BaseRepository implements IFacturas {
       },
     });
     return factura;
+  }
+
+  /**
+   * Procesa la respuesta de Gemini AI y crea la factura en la base de datos
+   */
+  async processGeminiResponse({
+    geminiData,
+    tenantId,
+  }: {
+    geminiData: GeminiResponse;
+    tenantId: string;
+  }) {
+    try {
+      // 1. Buscar o crear cliente
+      const clienteId = await this.findOrCreateCliente(
+        geminiData.cliente,
+        tenantId
+      );
+
+      // 2. Procesar productos y obtener sus IDs
+      const detalles = await this.processProductos(
+        geminiData.productos,
+        tenantId
+      );
+
+      // 3. Crear la factura con los datos procesados
+      const facturaData: FacturasEntity = {
+        id_cliente: clienteId,
+        total: geminiData.total,
+        detalles: detalles,
+        createdAt: geminiData.fecha ? new Date(geminiData.fecha) : new Date(),
+      };
+
+      // 4. Guardar la factura usando el método existente
+
+      return {
+        success: true,
+        factura: facturaData,
+        message: "Factura procesada ",
+      };
+    } catch (error) {
+      console.error("Error procesando respuesta de Gemini:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Error desconocido";
+      throw new Error(
+        `Error al procesar factura desde imagen: ${errorMessage}`
+      );
+    }
+  }
+
+  /**
+   * Busca un cliente existente o crea uno nuevo basado en los datos de Gemini
+   */
+  private async findOrCreateCliente(
+    clienteData: GeminiResponse["cliente"],
+    empresaId: string
+  ): Promise<string> {
+    if (!clienteData?.nombre) {
+      // Si no hay datos del cliente, crear uno genérico
+      const clienteGenerico = await db.clientes.create({
+        data: {
+          identification: `CLI-${Date.now() + Math.floor(Math.random() * 3)}`,
+          name: "Cliente Generado desde Imagen",
+          email: "cliente@generado.com",
+          phone: "0000000000",
+          address: "Dirección no especificada",
+          empresa_id: empresaId,
+        },
+      });
+      return clienteGenerico.id;
+    }
+
+    // Buscar cliente por nombre
+    const clienteExistente = await db.clientes.findFirst({
+      where: {
+        name: clienteData.nombre,
+        empresa_id: empresaId,
+      },
+    });
+
+    if (clienteExistente) {
+      return clienteExistente.id;
+    }
+
+    // Crear nuevo cliente
+    const nuevoCliente = await db.clientes.create({
+      data: {
+        identification: `CLI-${Date.now()}`,
+        name: clienteData.nombre,
+        email: clienteData.email || "cliente@generado.com",
+        phone: clienteData.telefono || "0000000000",
+        address: clienteData.direccion || "Dirección no especificada",
+        empresa_id: empresaId,
+      },
+    });
+
+    return nuevoCliente.id;
+  }
+
+  /**
+   * Procesa los productos de la respuesta de Gemini y busca o crea productos
+   */
+  private async processProductos(
+    productos: Array<{ nombre: string; cantidad: number; precio: number }>,
+    empresaId: string
+  ): Promise<DetallesFacturasEntity[]> {
+    const detalles: DetallesFacturasEntity[] = [];
+
+    for (const producto of productos) {
+      // Buscar producto por nombre
+      let productoEncontrado = await db.productos.findFirst({
+        where: {
+          nombre: {
+            contains: producto.nombre,
+            mode: "insensitive",
+          },
+          empresa_id: empresaId,
+        },
+      });
+
+      // Si no existe, crear el producto
+      if (!productoEncontrado) {
+        // Buscar una categoría por defecto o crear una
+        let categoria = await db.category.findFirst({
+          where: { empresa_id: empresaId },
+        });
+
+        if (!categoria) {
+          categoria = await db.category.create({
+            data: {
+              name: "General",
+              empresa_id: empresaId,
+            },
+          });
+        }
+
+        const productoPrice = producto.precio - 1000;
+
+        productoEncontrado = await db.productos.create({
+          data: {
+            nombre: producto.nombre,
+            precio_compra: productoPrice,
+            stock: 100, // Stock por defecto
+            categoryId: categoria.id,
+            empresa_id: empresaId,
+          },
+        });
+      }
+
+      // Agregar a los detalles
+      detalles.push({
+        id_producto: productoEncontrado.id,
+        cantidad: producto.cantidad,
+        precio_venta: producto.precio,
+      });
+    }
+
+    return detalles;
+  }
+
+  /**
+   * Valida y formatea la respuesta de Gemini AI
+   */
+  async validateGeminiResponse(response: unknown): Promise<GeminiResponse> {
+    try {
+      // Type guard para verificar que response es un objeto
+      if (!response || typeof response !== "object") {
+        throw new Error("Respuesta de Gemini debe ser un objeto");
+      }
+
+      const responseObj = response as Record<string, unknown>;
+
+      // Validar estructura básica
+      if (!responseObj.total || !responseObj.productos) {
+        throw new Error(
+          "Respuesta de Gemini incompleta: faltan campos requeridos"
+        );
+      }
+
+      // Validar que productos sea un array
+      if (!Array.isArray(responseObj.productos)) {
+        throw new Error("Campo 'productos' debe ser un array");
+      }
+
+      // Validar cada producto
+      for (const producto of responseObj.productos) {
+        if (
+          typeof producto !== "object" ||
+          !producto ||
+          !("nombre" in producto) ||
+          !("cantidad" in producto) ||
+          !("precio" in producto) ||
+          typeof producto.nombre !== "string" ||
+          typeof producto.cantidad !== "number" ||
+          typeof producto.precio !== "number"
+        ) {
+          throw new Error("Datos de producto inválidos");
+        }
+      }
+
+      // Validar total
+      if (typeof responseObj.total !== "number" || responseObj.total <= 0) {
+        throw new Error("Total inválido");
+      }
+
+      return response as GeminiResponse;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Error desconocido";
+      throw new Error(`Error validando respuesta de Gemini: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Obtiene estadísticas de facturas procesadas desde imágenes
+   */
+  async getFacturasFromImagesStats() {
+    const empresaId = this.getEmpresaId();
+
+    const totalFacturas = await db.factura.count({
+      where: { empresa_id: empresaId },
+    });
+
+    return {
+      totalFacturas,
+      facturasDesdeImagenes: "N/A",
+    };
   }
 }

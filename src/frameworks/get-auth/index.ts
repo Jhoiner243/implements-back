@@ -1,7 +1,7 @@
 import { getAuth } from "@clerk/express";
 import { NextFunction, Request, Response } from "express";
 import { injectable } from "inversify";
-import { withRequestId } from "../db/middleware";
+import { prismaContext, withRequestContext } from "../db/middleware";
 
 @injectable()
 export class HasPermission {
@@ -16,7 +16,7 @@ export class HasPermission {
 
       // Validación básica de autenticación
       if (!userId || !sessionId) {
-        if (req.body.data.id) {
+        if (req.body?.data?.id) {
           next();
           return;
         }
@@ -24,7 +24,7 @@ export class HasPermission {
       }
 
       // Permitir si no hay organización (usuarios sin org)
-      if (!orgId) {
+      if (!orgId && !req.body.orgId) {
         return next();
       }
 
@@ -35,14 +35,21 @@ export class HasPermission {
 
       // Verificar rol en la organización
       const hasPerm = has?.({ role: "org:admin" });
-      const hasPermMember = has({ role: "org:member" });
+      const hasPermMember = has?.({ role: "org:member" });
 
       if (!hasPerm && !hasPermMember) {
         return res.status(403).json("Forbidden");
       }
 
       // Inyectar orgId en contexto y continuar
-      withRequestId(orgId, next);
+      if (orgId) {
+        withRequestContext(orgId, next);
+      }
+      if (!orgId && req.body.orgId) {
+        prismaContext.run({ empresaId: req.body.orgId }, () => {
+          next();
+        });
+      }
     } catch (error) {
       console.error("Error en HasPermission middleware:", error);
       return next(error);

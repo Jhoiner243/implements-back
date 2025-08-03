@@ -15,4 +15,5 @@ export const {
   CONTRASENA,
   CLIENT_ID_FACTUS,
   CLIENT_SECRET_FACTUS,
+  GOOGLE_API_KEY,
 } = process.env;

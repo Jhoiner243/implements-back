@@ -7,6 +7,7 @@ import { clientesBinding } from "./bindings/clientes.binding";
 import { entidadesBinding } from "./bindings/entidades.binding";
 import { facturasBindig } from "./bindings/facturas.binding";
 import { gananciasBinding } from "./bindings/ganancias .binding";
+import { ImageBinding } from "./bindings/image.binding";
 import { mcpBinding } from "./bindings/mcp.bindig";
 import { notificationsBinding } from "./bindings/notifications-stock.binding";
 import { productosBinding } from "./bindings/productos.binding";
@@ -23,6 +24,7 @@ appContainer.load(
   notificationsBinding,
   analiticsBinding,
   authBinding,
+  ImageBinding,
   mcpBinding,
   cacheBinding,
   appBinding

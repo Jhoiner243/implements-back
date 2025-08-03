@@ -53,26 +53,27 @@ export class FacturaService {
         facturaWithCreatedAt
       );
 
+      console.log("Factura creada", facturaCreada);
       //Envío de factura a Dian
-      await this.submitDian.dataAdapterForSubmitToFactus({
-        company: facturaCreada.empresa,
-        facturaAdapter: {
-          factura: facturaCreada,
-          items: facturaCreada.detalles.map((detalle) => ({
-            id: detalle.id,
-            facturaId: detalle.facturaId,
-            nombre: detalle.producto.nombre,
-            cantidad: detalle.cantidad,
-            precio_compra: detalle.precio,
-            precio: detalle.precio,
-            productoId: detalle.producto.id,
-            id_producto: detalle.id,
-            createdAt: detalle.createdAt,
-            updatedAt: detalle.updatedAt,
-          })),
-          customer: facturaCreada.cliente,
-        },
-      });
+      // await this.submitDian.dataAdapterForSubmitToFactus({
+      //   company: facturaCreada.empresa,
+      //   facturaAdapter: {
+      //     factura: facturaCreada,
+      //     items: facturaCreada.detalles.map((detalle) => ({
+      //       id: detalle.id,
+      //       facturaId: detalle.facturaId,
+      //       nombre: detalle.producto.nombre,
+      //       cantidad: detalle.cantidad,
+      //       precio_compra: detalle.precio,
+      //       precio: detalle.precio,
+      //       productoId: detalle.producto.id,
+      //       id_producto: detalle.id,
+      //       createdAt: detalle.createdAt,
+      //       updatedAt: detalle.updatedAt,
+      //     })),
+      //     customer: facturaCreada.cliente,
+      //   },
+      // });
 
       const diary = facturaWithCreatedAt.detalles.map((detalle) => ({
         precio_venta: detalle.precio_venta,
