@@ -128,7 +128,7 @@ export class SubmitDianFactus {
       const productNeedData: Item[] = facturaAdapter.items.map((data) => ({
         code_reference: data.id,
         name: data.nombre,
-        quantity: parseFloat(String(data.cantidad)),
+        quantity: parseInt(String(data.cantidad)),
         discount_rate: data.porcentage_descuento
           ? data.porcentage_descuento
           : 0,
