@@ -63,6 +63,7 @@ model DetalleFactura {
   productoId String
   cantidad   Float
   precio     Float
+  porcentage_descuento Float ?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   factura    Factura   @relation(fields: [facturaId], references: [id], onDelete: Cascade)

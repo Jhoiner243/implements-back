@@ -9,6 +9,7 @@ export interface DetallesFacturasEntity {
   id_producto: string;
   cantidad: number;
   precio_venta: number;
+  porcentage_descuento?: number;
 }
 
 export interface FacturaSeccion extends FacturasEntity {
@@ -23,6 +24,7 @@ export interface FacturaAdapter {
       id_producto: string | null;
       cantidad: number;
       precio_venta: number;
+      porcentage_descuento: number;
     }
   ];
   id_cliente: string | null;

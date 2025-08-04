@@ -66,6 +66,7 @@ export class FacturaRepository extends BaseRepository implements IFacturas {
               productoId: d.id_producto,
               cantidad: d.cantidad,
               precio: d.precio_venta,
+              porcentage_descuento: d.porcentage_descuento,
             })),
           },
         },

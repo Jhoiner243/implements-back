@@ -45,6 +45,7 @@ export class FacturaService {
         createdAt: new Date(),
         detalles: facturaValid.detalles.map((detalle) => ({
           ...detalle,
+          porcentage_descuento: detalle.porcentage_descuento,
           createdAt: new Date(),
         })),
       };
@@ -53,7 +54,6 @@ export class FacturaService {
         facturaWithCreatedAt
       );
 
-      console.log("Factura creada", facturaCreada);
       //Envío de factura a Dian
       await this.submitDian.dataAdapterForSubmitToFactus({
         company: facturaCreada.empresa,
@@ -63,6 +63,7 @@ export class FacturaService {
             id: detalle.id,
             facturaId: detalle.facturaId,
             nombre: detalle.producto.nombre,
+            porcentage_descuento: detalle.porcentage_descuento,
             cantidad: detalle.cantidad,
             precio_compra: detalle.precio,
             precio: detalle.precio,
