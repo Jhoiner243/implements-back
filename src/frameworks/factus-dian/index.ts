@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Empresa } from "@prisma/client";
 import { inject, injectable } from "inversify";
 import { FacturaRepository } from "../../repositories/factura.repository";
@@ -8,15 +9,6 @@ import {
   Item,
   Welcome,
 } from "./types/types";
-
-interface DataResponse {
-  data: {
-    bill: {
-      qr_image: string;
-      number: string;
-    };
-  };
-}
 
 @injectable()
 export class SubmitDianFactus {
@@ -34,60 +26,77 @@ export class SubmitDianFactus {
   }: {
     factura: Welcome;
     id: string;
-  }): Promise<{ message: string } | undefined> {
+  }): Promise<{ message: string }> {
     try {
-      // Tokens de acceso factus
+      // 1) Obtener tokens de Factus
       const { access_token, refresh_token } = await this.authFactus.auth();
-
       if (!refresh_token) {
-        throw new Error("Falta el refresh token en envío de factura");
+        throw new Error("Falta el refresh_token en el envío de factura");
       }
 
+      // 2) Enviar la factura
       const response = await fetch(this.URL_SUBMIT, {
         method: "POST",
         body: JSON.stringify(factura),
         headers: {
           "Content-Type": "application/json",
-          refresh_token: refresh_token,
+          refresh_token,
           Authorization: `Bearer ${access_token}`,
         },
       });
-      const text = await response.text(); // lee como texto crudo
-      let info;
+
+      // 3) Leer la respuesta cruda
+      const text = await response.text();
+      let info: any;
       try {
-        info = JSON.parse(text); // parsea JSON si es posible
+        info = JSON.parse(text);
       } catch {
-        info = text; // si no es JSON, muestra el texto
+        info = text;
       }
 
+      // 4) Manejo de errores de validación (422)
+      if (response.status === 422) {
+        // Busca errores en distintos posibles campos
+        const errs =
+          info?.data?.errors ??
+          info?.errors ??
+          info?.errores ??
+          (Array.isArray(info) ? info : []);
+        console.error("Factus 422 detalles:\n", JSON.stringify(errs, null, 2));
+
+        const mensajes = Array.isArray(errs)
+          ? errs
+              .map((e: any) => e.message ?? e.mensaje ?? JSON.stringify(e))
+              .join("; ")
+          : JSON.stringify(errs);
+
+        throw new Error(`Validation failed: ${mensajes}`);
+      }
+
+      // 5) Cualquier otro status no OK
       if (!response.ok) {
-        // Aquí imprimimos con indentación para leer los arrays
-        console.error(
-          "Factus 422 detalles:\n",
-          JSON.stringify(info.data.errors, null, 2)
+        throw new Error(
+          `Error al enviar factura: status ${
+            response.status
+          } - ${JSON.stringify(info)}`
         );
-        throw new Error(`Validation failed, mira la consola.`);
       }
 
-      if (response.ok) {
-        const responseOk: DataResponse = info;
-        await this.facturaRepository.updateQrImage({
-          qr: responseOk.data.bill.qr_image,
-          number: responseOk.data.bill.number,
-          id: id,
-        });
-        return {
-          message: "Factura envíada",
-        };
-      }
+      // 6) Éxito: actualiza QR y número
+      const responseOk: {
+        data: { bill: { qr_image: string; number: string } };
+      } = info;
+      await this.facturaRepository.updateQrImage({
+        qr: responseOk.data.bill.qr_image,
+        number: responseOk.data.bill.number,
+        id,
+      });
 
-      return {
-        message: "Error al envíar factura",
-      };
-    } catch (err) {
-      if (err instanceof Error) {
-        throw new Error(err.message);
-      }
+      return { message: "Factura enviada exitosamente" };
+    } catch (err: any) {
+      // Reenvuelve el error para que tu servicio lo capture
+      console.error("Error en submit Factus:", err);
+      throw new Error(err.message || "Error desconocido en Factus");
     }
   }
 
@@ -119,8 +128,10 @@ export class SubmitDianFactus {
       const productNeedData: Item[] = facturaAdapter.items.map((data) => ({
         code_reference: data.id,
         name: data.nombre,
-        quantity: parseInt(String(data.cantidad)),
-        discount_rate: 0,
+        quantity: parseFloat(String(data.cantidad)),
+        discount_rate: data.porcentage_descuento
+          ? data.porcentage_descuento
+          : 0,
         price: data.precio,
         tax_rate: "0.00",
         is_excluded: 0,
