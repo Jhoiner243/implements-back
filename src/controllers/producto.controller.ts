@@ -8,6 +8,7 @@ import {
   Param,
   Post,
   Put,
+  QueryParam,
   Res,
 } from "routing-controllers";
 import {
@@ -41,6 +42,12 @@ export class ProductoController implements BaseController {
     } catch {
       return res.status(500).json({ message: "Error de servidor interno" });
     }
+  }
+
+  @Get("/productos-debounced")
+  async getProductsDebounced(@QueryParam("query") name: string) {
+    const response = this.productoService.getProductsDebounced({ name });
+    return response;
   }
 
   @Get("/productos")

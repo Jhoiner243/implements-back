@@ -53,6 +53,17 @@ export class ProductoRepository extends BaseRepository implements IProductos {
     });
   }
 
+  async getProductsDebounced({ name }: { name: string }) {
+    return await db.productos.findMany({
+      where: {
+        nombre: {
+          contains: name,
+          mode: "insensitive",
+        },
+      },
+    });
+  }
+
   async createCategory(
     data: Omit<CategoryEntity, "id">
   ): Promise<{ message: string }> {

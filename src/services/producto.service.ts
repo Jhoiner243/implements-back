@@ -32,6 +32,13 @@ export class ProductoService {
 
     return { message };
   }
+
+  async getProductsDebounced({ name }: { name: string }) {
+    if (typeof name !== "string") {
+      throw new Error("El campo no es un valor correcto");
+    }
+    return await this.productoRepository.getProductsDebounced({ name });
+  }
   async updateProduct({
     data,
     id,
