@@ -75,6 +75,7 @@ model Productos {
   idProducto        Int               @default(autoincrement())
   nombre            String
   precio_compra     Float
+  unidadMedida      UnidadesMedidaProducts @default(KGM)
   stock             Int               @default(0)
   categoryId        String
   avaliable         Boolean           @default(true)
@@ -251,4 +252,11 @@ enum StatusFactura {
   Pendiente
   Fiada
   Vencida
+}
+
+enum UnidadesMedidaProducts {
+  KGM
+  UND
+  LBR
+  GLL
 }

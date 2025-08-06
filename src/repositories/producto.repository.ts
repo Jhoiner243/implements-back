@@ -19,6 +19,7 @@ export class ProductoRepository extends BaseRepository implements IProductos {
         precio_compra: data.precio_compra,
         stock: data.stock,
         categoryId: data.categoryId,
+        unidadMedida: data.unidadMedida,
       },
     });
     return { message: "Producto agregado exitosamente" };
@@ -36,6 +37,7 @@ export class ProductoRepository extends BaseRepository implements IProductos {
 
     return productos.map((producto) => ({
       id: producto.id,
+      unidadMedida: producto.unidadMedida,
       empresa_id: producto.empresa_id,
       idProducto: producto.idProducto,
       nombre: producto.nombre,

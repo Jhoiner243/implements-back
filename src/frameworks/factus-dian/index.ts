@@ -121,7 +121,7 @@ export class SubmitDianFactus {
         names: facturaAdapter.customer.name,
         tribute_id: "21",
         dv: "",
-        municipality_id: "980",
+        municipality_id: "512",
       };
 
       //Datos que cumplen con la interfaz de los productos
