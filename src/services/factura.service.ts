@@ -40,13 +40,14 @@ export class FacturaService {
   async dataFact(data: FacturasEntity): Promise<{ message: string }> {
     try {
       const facturaValid = FacturasEntitySchema.parse(data);
+      const now = new Date();
       const facturaWithCreatedAt = {
         ...facturaValid,
-        createdAt: new Date(),
+        createdAt: now,
         detalles: facturaValid.detalles.map((detalle) => ({
           ...detalle,
           porcentage_descuento: detalle.porcentage_descuento,
-          createdAt: new Date(),
+          createdAt: now,
         })),
       };
 

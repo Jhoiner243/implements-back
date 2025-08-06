@@ -1,3 +1,5 @@
+import { UnidadesMedidaProducts } from "@prisma/client";
+
 export interface ProductoEntity {
   id: string;
   idProducto: number;
@@ -6,6 +8,7 @@ export interface ProductoEntity {
   precio_compra: number;
   stock: number;
   categoryId: string;
+  unidadMedida: UnidadesMedidaProducts;
 }
 export interface ProductoSeccion extends ProductoEntity {
   categoryName: string;
