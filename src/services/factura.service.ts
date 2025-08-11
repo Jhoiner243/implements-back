@@ -51,31 +51,50 @@ export class FacturaService {
         })),
       };
 
-      const facturaCreada = await this.facturaRepository.dataFact(
-        facturaWithCreatedAt
-      );
+      await this.facturaRepository.dataFact(facturaWithCreatedAt);
 
       //Envío de factura a Dian
-      await this.submitDian.dataAdapterForSubmitToFactus({
-        company: facturaCreada.empresa,
-        facturaAdapter: {
-          factura: facturaCreada,
-          items: facturaCreada.detalles.map((detalle) => ({
-            id: detalle.id,
-            facturaId: detalle.facturaId,
-            nombre: detalle.producto.nombre,
-            porcentage_descuento: detalle.porcentage_descuento,
-            cantidad: detalle.cantidad,
-            precio_compra: detalle.precio,
-            precio: detalle.precio,
-            productoId: detalle.producto.id,
-            id_producto: detalle.id,
-            createdAt: detalle.createdAt,
-            updatedAt: detalle.updatedAt,
-          })),
-          customer: facturaCreada.cliente,
-        },
-      });
+      // await this.submitDian.dataAdapterForSubmitToFactus({
+      //   company: facturaCreada.empresa,
+      //   facturaAdapter: {
+      //     factura: facturaCreada,
+      //     items: facturaCreada.detalles.map((detalle) => {
+      //       // Calcular campos de IVA
+      //       const subtotalItem = detalle.precio * detalle.cantidad;
+      //       const ivaAmount =
+      //         (facturaValid.iva_total || 0) *
+      //         (subtotalItem / (facturaValid.subtotal || facturaValid.total));
+      //       const totalItem = subtotalItem + ivaAmount;
+
+      //       return {
+      //         id: detalle.id,
+      //         facturaId: detalle.facturaId,
+      //         nombre: detalle.producto.nombre,
+      //         porcentage_descuento: detalle.porcentage_descuento,
+      //         cantidad: detalle.cantidad,
+      //         precio_compra: detalle.precio,
+      //         precio: detalle.precio,
+      //         productoId: detalle.producto.id,
+      //         id_producto: detalle.id,
+      //         createdAt: detalle.createdAt,
+      //         updatedAt: detalle.updatedAt,
+      //         // Campos adicionales para facturas electrónicas (calculados)
+      //         iva_amount: ivaAmount,
+      //         subtotal_item: subtotalItem,
+      //         total_item: totalItem,
+      //       };
+      //     }),
+      //     customer: facturaCreada.cliente,
+      //     // Campos adicionales para facturas electrónicas
+      //     iva_total: facturaValid.iva_total || 0,
+      //     subtotal: facturaValid.subtotal || facturaValid.total,
+      //     tax_information: facturaValid.tax_information || {
+      //       iva_base: facturaValid.subtotal || facturaValid.total,
+      //       iva_rate: 19, // Tasa por defecto en Colombia
+      //       iva_amount: facturaValid.iva_total || 0,
+      //     },
+      //   },
+      // });
 
       const diary = facturaWithCreatedAt.detalles.map((detalle) => ({
         precio_venta: detalle.precio_venta,
